@@ -150,9 +150,9 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-# Vercel deployment: collectstatic will put files here
+# Vercel deployment
 if os.environ.get("VERCEL"):
-    STATIC_ROOT = "/tmp/staticfiles"
+    STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Login URLs
 LOGIN_REDIRECT_URL = 'dashboard'
