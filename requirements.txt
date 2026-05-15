@@ -3,4 +3,5 @@ Pillow>=10.0.0
 whitenoise[brotli]>=6.0.0
 psycopg2-binary>=2.9.0
 dj-database-url>=2.0.0
+requests>=2.31.0
 

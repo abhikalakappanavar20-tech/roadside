@@ -36,3 +36,4 @@ Thumbs.db
 .ruff_cache/
 
 .vercel
+.env*.local

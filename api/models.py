@@ -138,10 +138,8 @@ class ServiceRequest(models.Model):
         max_digits=8, decimal_places=2, null=True, blank=True
     )
 
-    # Customer uploaded photos
-    customer_photo = models.ImageField(
-        upload_to="service_photos/%Y/%m/%d/", null=True, blank=True
-    )
+    # Customer uploaded photos (stores Vercel Blob URL)
+    customer_photo = models.URLField(max_length=500, null=True, blank=True)
 
     def __str__(self):
         return f"{self.request_id} - {self.service_type} - {self.status}"

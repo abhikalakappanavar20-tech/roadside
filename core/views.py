@@ -10,6 +10,7 @@ from datetime import timedelta
 
 from api.models import UserProfile, ServiceRequest, ServiceHistory
 from api.forms import CustomerRegistrationForm, ProviderRegistrationForm
+from api.blob_storage import upload_file, delete_file
 
 
 # ==================== Home & Auth Views ====================
@@ -570,9 +571,16 @@ def upload_service_photo(request, request_id):
             messages.error(request, "Please select a photo to upload.")
             return redirect("request_detail", request_id=request_id)
 
-        service_request.customer_photo = photo
-        service_request.save()
-        messages.success(request, "Photo uploaded successfully!")
+        try:
+            url = upload_file(photo.read(), photo.name)
+            # Delete old photo if exists
+            if service_request.customer_photo:
+                delete_file(service_request.customer_photo)
+            service_request.customer_photo = url
+            service_request.save()
+            messages.success(request, "Photo uploaded successfully!")
+        except Exception as e:
+            messages.error(request, f"Upload failed: {str(e)}")
         return redirect("request_detail", request_id=request_id)
 
     context = {"service_request": service_request}
