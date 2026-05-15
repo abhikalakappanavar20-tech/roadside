@@ -11,7 +11,9 @@
 .bill-row:last-child{border-bottom:none;}
 .bill-total{background:#f8f9fa;padding:1rem;border-radius:8px;margin-top:1rem;font-size:1.2rem;}
 .status-badge{font-size:0.9rem;padding:0.4rem 1rem;}
+@media print{body{visibility:hidden;}.bill-container{visibility:visible;position:absolute;left:0;top:0;width:100%;}.btn,.navbar{display:none!important;}}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 {% endblock %}
 
 {% block content %}
@@ -119,16 +121,21 @@
 {% block extra_js %}
 <script>
 function downloadBill() {
-    const billContent = document.documentElement.outerHTML;
-    const blob = new Blob([billContent], {type: 'text/html'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'bill_{{ service_request.request_id }}.html';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const element = document.querySelector('.bill-container');
+    const btn = document.querySelector('.btn-primary');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Downloading...';
+    const opt = {
+        margin:       0.5,
+        filename:     'bill_{{ service_request.request_id }}.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCors: true },
+        jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+    };
+    html2pdf().set(opt).from(element).save().then(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-download"></i> Download Bill';
+    });
 }
 </script>
 {% endblock %}
