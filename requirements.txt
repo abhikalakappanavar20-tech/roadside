@@ -3,5 +3,4 @@ Pillow>=10.0.0
 whitenoise[brotli]>=6.0.0
 psycopg2-binary>=2.9.0
 dj-database-url>=2.0.0
-cloudinary>=1.40.0
-django-cloudinary-storage>=0.3.0
+
