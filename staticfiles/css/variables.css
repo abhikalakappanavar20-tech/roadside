@@ -1,0 +1,151 @@
+/* =============================================================================
+   THEME CONFIGURATION - Edit these values to customize the entire app
+   ============================================================================= */
+
+/* ---------- COLOR PALETTE ---------- */
+/* Primary Colors */
+:root {
+    /* Brand Colors */
+    --primary-color: #667eea;
+    --primary-dark: #5568d3;
+    --primary-light: #8b95f5;
+    --secondary-color: #764ba2;
+    --secondary-dark: #5e3b80;
+    --secondary-light: #9b6fc4;
+
+    /* Status Colors */
+    --success-color: #198754;
+    --success-light: #d1e7dd;
+    --warning-color: #ffc107;
+    --warning-light: #fff3cd;
+    --danger-color: #dc3545;
+    --danger-light: #f8d7da;
+    --info-color: #0dcaf0;
+    --info-light: #d1ecf1;
+
+    /* Neutral Colors */
+    --white: #ffffff;
+    --light-bg: #f8f9fa;
+    --light-border: #dee2e6;
+    --gray-100: #f8f9fa;
+    --gray-200: #e9ecef;
+    --gray-300: #dee2e6;
+    --gray-400: #adb5bd;
+    --gray-500: #6c757d;
+    --gray-600: #5c636a;
+    --gray-700: #565e64;
+    --dark-text: #212529;
+    --dark-secondary: #343a40;
+
+    /* Text Colors */
+    --text-primary: #212529;
+    --text-secondary: #6c757d;
+    --text-muted: #adb5bd;
+
+    /* Service Type Colors */
+    --fuel-color: #f39c12;
+    --mechanic-color: #e74c3c;
+    --tire-color: #3498db;
+    --battery-color: #27ae60;
+    --tow-color: #9b59b6;
+
+    /* Background Colors */
+    --body-bg: var(--white);
+    --card-bg: var(--white);
+    --navbar-bg: var(--primary-color);
+    --footer-bg: var(--light-bg);
+
+    /* Border Colors */
+    --border-color: var(--gray-300);
+    --border-radius: 8px;
+
+    /* Typography */
+    --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --font-size-base: 1rem;
+    --font-size-sm: 0.875rem;
+    --font-size-lg: 1.25rem;
+    --font-size-xl: 1.5rem;
+    --font-size-2xl: 2rem;
+    --font-weight-normal: 400;
+    --font-weight-bold: 700;
+    --line-height: 1.5;
+
+    /* Spacing */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    --spacing-2xl: 3rem;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15);
+
+    /* Transitions */
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.2s ease;
+    --transition-slow: 0.3s ease;
+}
+
+/* ---------- BUTTON STYLES ---------- */
+.btn-primary-bg {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border: none;
+}
+
+.btn-primary-bg:hover {
+    background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+    transform: translateY(-1px);
+}
+
+/* ---------- STATUS BADGES ---------- */
+.status-badge {
+    padding: 0.35em 0.65em;
+    border-radius: 0.25rem;
+    font-size: 0.875em;
+    font-weight: 500;
+}
+
+.status-pending { background-color: var(--warning-color); color: #000; }
+.status-accepted { background-color: var(--info-color); color: #000; }
+.status-in_progress { background-color: var(--primary-color); color: #fff; }
+.status-completed { background-color: var(--success-color); color: #fff; }
+.status-paid { background-color: var(--success-color); color: #fff; }
+.status-cancelled { background-color: var(--gray-500); color: #fff; }
+
+/* ---------- SERVICE TYPE ICONS ---------- */
+.service-fuel { color: var(--fuel-color); }
+.service-mechanic { color: var(--mechanic-color); }
+.service-tire { color: var(--tire-color); }
+.service-battery { color: var(--battery-color); }
+.service-tow { color: var(--tow-color); }
+
+/* ---------- NAVBAR STYLES ---------- */
+.navbar-custom {
+    background-color: var(--navbar-bg) !important;
+}
+
+.navbar-brand-custom {
+    font-weight: var(--font-weight-bold);
+    font-size: 1.5rem;
+}
+
+/* ---------- CARD STYLES ---------- */
+.card-custom {
+    border-radius: var(--border-radius);
+    transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.card-custom:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* ---------- FOOTER STYLES ---------- */
+.footer-custom {
+    background-color: var(--footer-bg);
+    padding: 1rem 0;
+}

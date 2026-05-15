@@ -1,0 +1,435 @@
+/* Roadside Assist Custom Styles */
+
+:root {
+    --primary-color: #667eea;
+    --secondary-color: #764ba2;
+    --success-color: #198754;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+    --info-color: #0dcaf0;
+    --light-bg: #f8f9fa;
+    --dark-text: #212529;
+}
+
+/* Global Styles */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+}
+
+/* Mobile-First Styles */
+@media (max-width: 768px) {
+    .container-fluid {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .table-responsive {
+        font-size: 0.9rem;
+    }
+
+    .btn {
+        font-size: 0.9rem;
+        padding: 0.375rem 0.75rem;
+    }
+
+    .card {
+        margin-bottom: 1rem;
+    }
+}
+
+/* Status Badges */
+.status-badge-pending {
+    background-color: var(--warning-color);
+    color: #000;
+}
+
+.status-badge-accepted {
+    background-color: var(--info-color);
+    color: #000;
+}
+
+.status-badge-in_progress {
+    background-color: var(--primary-color);
+    color: #fff;
+}
+
+.status-badge-completed {
+    background-color: var(--success-color);
+    color: #fff;
+}
+
+.status-badge-paid {
+    background-color: var(--success-color);
+    color: #fff;
+}
+
+.status-badge-cancelled {
+    background-color: #6c757d;
+    color: #fff;
+}
+
+/* Service Type Icons */
+.service-icon-fuel {
+    color: #f39c12;
+}
+
+.service-icon-mechanic {
+    color: #e74c3c;
+}
+
+.service-icon-tire {
+    color: #3498db;
+}
+
+.service-icon-battery {
+    color: #27ae60;
+}
+
+.service-icon-tow {
+    color: #9b59b6;
+}
+
+/* Card Hover Effects */
+.card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Button Styles */
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border: none;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+    transform: translateY(-1px);
+}
+
+/* Navigation */
+.navbar-brand {
+    font-weight: 700;
+    font-size: 1.5rem;
+}
+
+/* Dashboard Stats */
+.stat-card {
+    border-radius: 15px;
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.stat-card h3 {
+    font-size: 2.5rem;
+    font-weight: 700;
+}
+
+/* Request Cards */
+.request-card {
+    border-left: 4px solid transparent;
+    transition: all 0.3s;
+}
+
+.request-card:hover {
+    transform: translateX(5px);
+}
+
+.request-card.service-fuel {
+    border-left-color: #f39c12;
+}
+
+.request-card.service-mechanic {
+    border-left-color: #e74c3c;
+}
+
+.request-card.service-tire {
+    border-left-color: #3498db;
+}
+
+.request-card.service-battery {
+    border-left-color: #27ae60;
+}
+
+/* Loading Spinner */
+.spinner-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+}
+
+/* Map Container */
+.map-container {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Timeline */
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #dee2e6;
+}
+
+.timeline-item {
+    position: relative;
+    padding-bottom: 1.5rem;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -24px;
+    top: 5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #6c757d;
+    border: 2px solid white;
+    box-shadow: 0 0 0 2px #6c757d;
+}
+
+.timeline-item.completed::before {
+    background: var(--success-color);
+    box-shadow: 0 0 0 2px var(--success-color);
+}
+
+.timeline-item.active::before {
+    background: var(--primary-color);
+    box-shadow: 0 0 0 2px var(--primary-color);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+}
+
+/* Mobile App-like Bottom Sheet */
+.bottom-sheet {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    padding: 1rem;
+    transform: translateY(100%);
+    transition: transform 0.3s ease-out;
+    z-index: 1000;
+}
+
+.bottom-sheet.show {
+    transform: translateY(0);
+}
+
+.bottom-sheet-handle {
+    width: 50px;
+    height: 5px;
+    background: #dee2e6;
+    border-radius: 5px;
+    margin: 0 auto 1rem;
+}
+
+/* Notification Badge */
+.notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 20px;
+    height: 20px;
+    background: var(--danger-color);
+    color: white;
+    border-radius: 50%;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Provider Availability Toggle */
+.availability-toggle {
+    width: 60px;
+    height: 30px;
+    border-radius: 15px;
+    position: relative;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.availability-toggle.online {
+    background-color: var(--success-color);
+}
+
+.availability-toggle.offline {
+    background-color: #6c757d;
+}
+
+.availability-toggle::after {
+    content: '';
+    position: absolute;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: white;
+    top: 2px;
+    left: 2px;
+    transition: transform 0.3s;
+}
+
+.availability-toggle.online::after {
+    transform: translateX(30px);
+}
+
+/* Smooth Scroll */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Print Styles */
+@media print {
+    .navbar,
+    .btn,
+    footer {
+        display: none !important;
+    }
+
+    .card {
+        box-shadow: none;
+        border: 1px solid #dee2e6;
+    }
+}
+
+/* Accessibility */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* Focus Styles */
+a:focus,
+button:focus,
+input:focus,
+select:focus,
+textarea:focus {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+/* SweetAlert2 Custom Styles */
+.swal2-custom-popup {
+    border-radius: 12px !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2) !important;
+}
+
+.swal2-popup {
+    border-radius: 12px;
+}
+
+.swal2-icon-success {
+    border-color: #28a745;
+}
+
+.swal2-icon-success .swal2-success-ring {
+    border-color: #28a745;
+}
+
+.swal2-icon-error {
+    border-color: #dc3545;
+}
+
+.swal2-icon-warning {
+    border-color: #ffc107;
+}
+
+.swal2-icon-info {
+    border-color: #17a2b8;
+}
+
+/* SweetAlert Toast Animations */
+.swal2-toast {
+    border-radius: 10px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+}
+
+.swal2-show {
+    animation: swal2-slide-in 0.3s ease-out;
+}
+
+@keyframes swal2-slide-in {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.swal2-hide {
+    animation: swal2-slide-out 0.3s ease-in forwards;
+}
+
+@keyframes swal2-slide-out {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}

@@ -13,7 +13,6 @@ env/
 # Django
 *.sqlite3
 media/
-staticfiles/
 
 # IDE
 .vscode/
@@ -35,3 +34,5 @@ Thumbs.db
 
 # Ruff
 .ruff_cache/
+
+.vercel
