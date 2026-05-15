@@ -1,0 +1,17 @@
+{
+  "name": "roadside-assist",
+  "version": "1.0.0",
+  "description": "Roadside Assistance - On-demand breakdown & fuel help",
+  "private": true,
+  "scripts": {
+    "build": "node build.js",
+    "cap-sync": "npx cap sync",
+    "cap-open": "npx cap open android",
+    "apk": "cd android && ./gradlew assembleDebug"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.3.4",
+    "@capacitor/cli": "^8.3.4",
+    "@capacitor/core": "^8.3.4"
+  }
+}

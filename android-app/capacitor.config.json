@@ -1,0 +1,26 @@
+{
+  "appId": "com.roadsideassist.app",
+  "appName": "Roadside Assist",
+  "webDir": "www",
+  "server": {
+    "url": "https://roadside-assist-ashy.vercel.app",
+    "allowNavigation": [
+      "roadside-assist-ashy.vercel.app",
+      "*.vercel.app",
+      "unpkg.com",
+      "cdn.jsdelivr.net",
+      "*.openstreetmap.org",
+      "*.tile.openstreetmap.org"
+    ]
+  },
+  "android": {
+    "allowMixedContent": true,
+    "captureInput": true
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#2563eb"
+    }
+  }
+}

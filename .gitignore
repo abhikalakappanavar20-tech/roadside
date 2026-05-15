@@ -35,5 +35,12 @@ Thumbs.db
 # Ruff
 .ruff_cache/
 
+# Android build artifacts
+android-app/android/app/build/
+android-app/android/.gradle/
+android-app/node_modules/
+android-app/android/captures/
+RoadsideAssist.apk
+
 .vercel
 .env*.local
