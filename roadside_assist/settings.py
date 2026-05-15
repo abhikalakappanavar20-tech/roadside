@@ -59,6 +59,8 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.humanize",
     "whitenoise.runserver_nostatic",
+    "cloudinary",
+    "cloudinary_storage",
     "core",
     "api",
 ]
@@ -150,9 +152,10 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-# Vercel deployment
-if os.environ.get("VERCEL"):
-    STATIC_ROOT = BASE_DIR / "staticfiles"
+# Cloudinary for media file storage (required on Vercel - read-only filesystem)
+CLOUDINARY_URL = os.environ.get("CLOUDINARY_URL")
+if CLOUDINARY_URL:
+    DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
 
 # Login URLs
 LOGIN_REDIRECT_URL = 'dashboard'
