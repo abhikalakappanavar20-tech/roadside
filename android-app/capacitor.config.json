@@ -4,9 +4,12 @@
   "webDir": "www",
   "server": {
     "url": "https://roadside-assist-ashy.vercel.app",
+    "hostname": "roadside-assist-ashy.vercel.app",
+    "androidScheme": "https",
     "allowNavigation": [
       "roadside-assist-ashy.vercel.app",
       "*.vercel.app",
+      "blob.vercel-storage.com",
       "unpkg.com",
       "cdn.jsdelivr.net",
       "*.openstreetmap.org",

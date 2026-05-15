@@ -61,4 +61,6 @@ urlpatterns = [
     ),
     # Profile
     path("profile/", views.profile, name="profile"),
+    # APK Download
+    path("download-app/", views.download_app, name="download_app"),
 ]
