@@ -1,0 +1,126 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Rate Service - {{ service_request.request_id }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .star-rating {
+        display: flex;
+        flex-direction: row-reverse;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+    .star-rating input {
+        display: none;
+    }
+    .star-rating label {
+        font-size: 2.5rem;
+        color: #ccc;
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+    .star-rating label:hover,
+    .star-rating label:hover ~ label,
+    .star-rating input:checked ~ label {
+        color: #ffc107;
+    }
+    .star-rating label:hover {
+        color: #ffdb70;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'request_detail' service_request.request_id %}">{{ service_request.request_id }}</a></li>
+                    <li class="breadcrumb-item active">Rate Service</li>
+                </ol>
+            </nav>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-star"></i> Rate Your Service</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <p class="text-muted">How was your experience with the service?</p>
+                        
+                        {% if service_request.assigned_provider %}
+                        <div class="mb-3">
+                            <strong>{{ service_request.assigned_provider.get_full_name|default:service_request.assigned_provider.username }}</strong>
+                            <br>
+                            <small class="text-muted">{{ service_request.get_service_type_display }}</small>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label class="form-label text-center d-block">Select Rating</label>
+                            <div class="star-rating">
+                                <input type="radio" id="star5" name="rating" value="5" required>
+                                <label for="star5" title="5 stars"><i class="bi bi-star-fill"></i></label>
+                                
+                                <input type="radio" id="star4" name="rating" value="4">
+                                <label for="star4" title="4 stars"><i class="bi bi-star-fill"></i></label>
+                                
+                                <input type="radio" id="star3" name="rating" value="3">
+                                <label for="star3" title="3 stars"><i class="bi bi-star-fill"></i></label>
+                                
+                                <input type="radio" id="star2" name="rating" value="2">
+                                <label for="star2" title="2 stars"><i class="bi bi-star-fill"></i></label>
+                                
+                                <input type="radio" id="star1" name="rating" value="1">
+                                <label for="star1" title="1 star"><i class="bi bi-star-fill"></i></label>
+                            </div>
+                            <div class="text-center mt-2">
+                                <span id="ratingText" class="text-muted small">Click to rate</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="review" class="form-label">Write a Review (Optional)</label>
+                            <textarea class="form-control" id="review" name="review" rows="3" 
+                                      placeholder="Share your experience..."></textarea>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-warning">
+                                <i class="bi bi-check-circle"></i> Submit Rating
+                            </button>
+                            <a href="{% url 'request_detail' service_request.request_id %}" class="btn btn-outline-secondary">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const ratingTexts = {
+        1: 'Poor - Very dissatisfied',
+        2: 'Fair - Could be better',
+        3: 'Good - Satisfied',
+        4: 'Very Good - Exceeded expectations',
+        5: 'Excellent - Highly recommended!'
+    };
+
+    document.querySelectorAll('.star-rating input').forEach(input => {
+        input.addEventListener('change', function() {
+            document.getElementById('ratingText').textContent = ratingTexts[this.value];
+        });
+    });
+</script>
+{% endblock %}

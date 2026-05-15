@@ -1,0 +1,148 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Customer Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-speedometer2"></i> My Dashboard</h2>
+                <a href="{% url 'new_request' %}" class="btn btn-primary btn-lg">
+                    <i class="bi bi-plus-circle"></i> New Request
+                </a>
+            </div>
+
+            <!-- Active Request Alert -->
+            {% if active_request %}
+            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                <h5><i class="bi bi-clock"></i> You have an active request</h5>
+                <p class="mb-2">
+                    <strong>{{ active_request.get_service_type_display }}</strong> -
+                    <span class="badge
+                        {% if active_request.status == 'pending' %}bg-warning
+                        {% elif active_request.status == 'accepted' %}bg-info
+                        {% elif active_request.status == 'in_progress' %}bg-primary
+                        {% elif active_request.status == 'completed' %}bg-success
+                        {% elif active_request.status == 'paid' %}bg-success
+                        {% else %}bg-secondary{% endif %}">
+                        {{ active_request.status|title }}
+                    </span>
+                </p>
+                {% if active_request.assigned_provider %}
+                <p class="mb-2">
+                    Provider: <strong>{{ active_request.assigned_provider.get_full_name|default:active_request.assigned_provider.username }}</strong>
+                    {% if active_request.assigned_provider.profile.phone_number %}
+                    | <i class="bi bi-telephone"></i> {{ active_request.assigned_provider.profile.phone_number }}
+                    {% endif %}
+                </p>
+                {% endif %}
+                <a href="{% url 'request_detail' active_request.request_id %}" class="btn btn-sm btn-info">View Details</a>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endif %}
+
+            <!-- Quick Actions -->
+            <div class="row mb-4">
+                <div class="col-md-3 col-6">
+                    <div class="card text-center h-100 border-primary">
+                        <div class="card-body">
+                            <i class="bi bi-fuel-pump text-primary" style="font-size: 2rem;"></i>
+                            <h5 class="card-title mt-2">Fuel</h5>
+                            <a href="{% url 'new_request' %}?type=fuel" class="btn btn-outline-primary btn-sm">Request</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="card text-center h-100 border-warning">
+                        <div class="card-body">
+                            <i class="bi bi-wrench text-warning" style="font-size: 2rem;"></i>
+                            <h5 class="card-title mt-2">Mechanic</h5>
+                            <a href="{% url 'new_request' %}?type=mechanic" class="btn btn-outline-warning btn-sm">Request</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="card text-center h-100 border-info">
+                        <div class="card-body">
+                            <i class="bi bi-circle text-info" style="font-size: 2rem;"></i>
+                            <h5 class="card-title mt-2">Tire</h5>
+                            <a href="{% url 'new_request' %}?type=tire" class="btn btn-outline-info btn-sm">Request</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="card text-center h-100 border-success">
+                        <div class="card-body">
+                            <i class="bi bi-lightning-charge text-success" style="font-size: 2rem;"></i>
+                            <h5 class="card-title mt-2">Battery</h5>
+                            <a href="{% url 'new_request' %}?type=battery" class="btn btn-outline-success btn-sm">Request</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Requests -->
+            <h4>Recent Requests</h4>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Request ID</th>
+                            <th>Service</th>
+                            <th>Status</th>
+                            <th>Provider</th>
+                            <th>Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in recent_requests %}
+                        <tr>
+                            <td><code>{{ req.request_id }}</code></td>
+                            <td>{{ req.get_service_type_display }}</td>
+                            <td>
+                                <span class="badge rounded-pill
+                                    {% if req.status == 'pending' %}bg-warning
+                                    {% elif req.status == 'accepted' %}bg-info
+                                    {% elif req.status == 'in_progress' %}bg-primary
+                                    {% elif req.status == 'completed' %}bg-success
+                                    {% elif req.status == 'paid' %}bg-success
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ req.status|title }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if req.assigned_provider %}
+                                    {{ req.assigned_provider.get_full_name|default:req.assigned_provider.username }}
+                                {% else %}
+                                    <span class="text-muted">Waiting...</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ req.created_at|date:"M d, H:i" }}</td>
+                            <td>
+                                <a href="{% url 'request_detail' req.request_id %}" class="btn btn-sm btn-outline-primary">View</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">No requests yet. Create your first request!</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if active_request %}
+<script>
+// Auto-refresh every 10 seconds for active requests
+setTimeout(function() {
+    location.reload();
+}, 10000);
+</script>
+{% endif %}
+{% endblock %}

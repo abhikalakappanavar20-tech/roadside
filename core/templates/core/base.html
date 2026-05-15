@@ -1,0 +1,291 @@
+{% load static %}
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Roadside Assist{% endblock %}</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <!-- Leaflet CSS (OpenStreetMap) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- SweetAlert2 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#2563eb">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="RoadsideHelp">
+    <link rel="apple-touch-icon" href="{% static 'img/icon-192.png' %}">
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    {% if user.is_authenticated %}
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'dashboard' %}">
+                <i class="bi bi-truck"></i> Roadside Assist
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    {% if user.profile.role == 'customer' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'customer_dashboard' %}">Dashboard</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'new_request' %}"><i class="bi bi-plus-circle"></i> New Request</a>
+                        </li>
+                    {% elif user.profile.role == 'provider' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'provider_dashboard' %}">Dashboard</a>
+                        </li>
+                        <li class="nav-item">
+                            <span class="nav-link">
+                                Status:
+                                <span class="badge {% if user.profile.is_available %}bg-success{% else %}bg-danger{% endif %}">
+                                    {% if user.profile.is_available %}Available{% else %}Unavailable{% endif %}
+                                </span>
+                            </span>
+                        </li>
+                    {% elif user.profile.role == 'admin' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'admin_dashboard' %}">Dashboard</a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">Requests</a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{% url 'requests_filtered' 'pending' %}">Pending</a></li>
+                                <li><a class="dropdown-item" href="{% url 'requests_filtered' 'accepted' %}">Accepted</a></li>
+                                <li><a class="dropdown-item" href="{% url 'requests_filtered' 'in_progress' %}">In Progress</a></li>
+                                <li><a class="dropdown-item" href="{% url 'requests_filtered' 'completed' %}">Completed</a></li>
+                                <li><a class="dropdown-item" href="{% url 'requests_filtered' 'paid' %}">Paid</a></li>
+                            </ul>
+                        </li>
+                    {% endif %}
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle"></i> {{ user.first_name|default:user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{% url 'profile' %}">Profile</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="{% url 'logout' %}">Logout</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+
+    <main>
+        {% if messages %}
+        <div id="django-messages" style="display:none;">
+            {% for message in messages %}
+            <div class="message" data-tags="{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    {% if user.is_authenticated %}
+    <footer class="bg-light mt-5 py-3">
+        <div class="container text-center text-muted">
+            <small>&copy; 2025 Roadside Assist. All rights reserved.</small>
+        </div>
+    </footer>
+    {% endif %}
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Leaflet JS (OpenStreetMap) -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Custom JS -->
+    <script src="{% static 'js/main.js' %}"></script>
+
+    <!-- PWA Service Worker Registration -->
+    <script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+            navigator.serviceWorker.register('{% static "js/service-worker.js" %}')
+                .then(function(registration) {
+                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                }, function(error) {
+                    console.log('ServiceWorker registration failed: ', error);
+                });
+        });
+    }
+
+    // Handle PWA install prompt
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        deferredPrompt = e;
+
+        // Show install button (if you add one to your UI)
+        const installBtn = document.getElementById('pwa-install-btn');
+        if (installBtn) {
+            installBtn.style.display = 'block';
+            installBtn.addEventListener('click', function() {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then(function(choiceResult) {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('User accepted the A2HS prompt');
+                    } else {
+                        console.log('User dismissed the A2HS prompt');
+                    }
+                    deferredPrompt = null;
+                });
+            });
+        }
+    });
+    </script>
+
+    <!-- SweetAlert Messages -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Show Django messages as SweetAlert popups
+        const messagesContainer = document.getElementById('django-messages');
+        if (messagesContainer) {
+            const messages = messagesContainer.querySelectorAll('.message');
+            messages.forEach(function(message, index) {
+                const tags = message.getAttribute('data-tags');
+                const text = message.textContent.trim();
+
+                // Map Django message tags to SweetAlert icons
+                const iconMap = {
+                    'success': 'success',
+                    'error': 'error',
+                    'warning': 'warning',
+                    'info': 'info',
+                    'debug': 'info',
+                    'safe': 'success'
+                };
+
+                // Extract icon from tags (handle multiple tags like 'safe success')
+                let icon = 'info';
+                const tagList = tags.split(' ');
+                for (let tag of tagList) {
+                    if (iconMap[tag]) {
+                        icon = iconMap[tag];
+                        break;
+                    }
+                }
+
+                // Show SweetAlert with delay for multiple messages
+                setTimeout(function() {
+                    Swal.fire({
+                        icon: icon,
+                        title: icon === 'success' ? 'Success!' : icon === 'error' ? 'Error!' : icon === 'warning' ? 'Warning!' : 'Info',
+                        text: text,
+                        timer: 4000,
+                        timerProgressBar: true,
+                        showConfirmButton: false,
+                        toast: true,
+                        position: 'top-end',
+                        background: icon === 'success' ? '#d4edda' : icon === 'error' ? '#f8d7da' : icon === 'warning' ? '#fff3cd' : '#d1ecf1',
+                        color: icon === 'success' ? '#155724' : icon === 'error' ? '#721c24' : icon === 'warning' ? '#856404' : '#0c5460',
+                        customClass: {
+                            popup: 'swal2-custom-popup'
+                        }
+                    });
+                }, index * 500);
+            });
+        }
+    });
+
+    // Global SweetAlert helper functions for use throughout the app
+    window.SwalHelper = {
+        success: function(message, title = 'Success!') {
+            return Swal.fire({
+                icon: 'success',
+                title: title,
+                text: message,
+                timer: 3000,
+                timerProgressBar: true,
+                showConfirmButton: false,
+                toast: true,
+                position: 'top-end'
+            });
+        },
+        error: function(message, title = 'Error!') {
+            return Swal.fire({
+                icon: 'error',
+                title: title,
+                text: message,
+                confirmButtonColor: '#dc3545'
+            });
+        },
+        warning: function(message, title = 'Warning!') {
+            return Swal.fire({
+                icon: 'warning',
+                title: title,
+                text: message,
+                confirmButtonColor: '#ffc107'
+            });
+        },
+        info: function(message, title = 'Info') {
+            return Swal.fire({
+                icon: 'info',
+                title: title,
+                text: message,
+                confirmButtonColor: '#17a2b8'
+            });
+        },
+        confirm: function(message, title = 'Are you sure?', confirmText = 'Yes', cancelText = 'Cancel') {
+            return Swal.fire({
+                title: title,
+                text: message,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: confirmText,
+                cancelButtonText: cancelText
+            });
+        },
+        toast: function(message, icon = 'success') {
+            return Swal.fire({
+                icon: icon,
+                title: message,
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true
+            });
+        }
+    };
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

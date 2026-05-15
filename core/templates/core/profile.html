@@ -1,0 +1,93 @@
+{% extends 'core/base.html' %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card mt-5">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-person-circle"></i> My Profile</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="first_name" class="form-label">First Name</label>
+                                <input type="text" class="form-control" name="first_name" id="first_name"
+                                       value="{{ user.first_name }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="last_name" class="form-label">Last Name</label>
+                                <input type="text" class="form-control" name="last_name" id="last_name"
+                                       value="{{ user.last_name }}" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" name="email" id="email"
+                                   value="{{ user.email }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="phone_number" class="form-label">Phone Number</label>
+                            <input type="text" class="form-control" name="phone_number" id="phone_number"
+                                   value="{{ profile.phone_number }}" required>
+                        </div>
+
+                        {% if profile.role == 'provider' %}
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="vehicle_number" class="form-label">Vehicle Number</label>
+                                <input type="text" class="form-control" name="vehicle_number" id="vehicle_number"
+                                       value="{{ profile.vehicle_number }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Availability Status</label>
+                                <div>
+                                    <input type="checkbox" name="is_available" id="is_available"
+                                           {% if profile.is_available %}checked{% endif %} class="form-check-input me-2">
+                                    <label for="is_available">Available to receive requests</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card bg-light mb-3">
+                            <div class="card-body text-center">
+                                <h4 class="text-warning mb-1">
+                                    {% if profile.average_rating > 0 %}
+                                        <i class="bi bi-star-fill"></i> {{ profile.average_rating }} / 5
+                                    {% else %}
+                                        <i class="bi bi-star"></i> No Ratings Yet
+                                    {% endif %}
+                                </h4>
+                                <p class="text-muted mb-0 small">
+                                    Based on {{ profile.rating_count }} rating{{ profile.rating_count|pluralize }}
+                                </p>
+                            </div>
+                        </div>
+                        {% elif profile.role == 'customer' %}
+                        <div class="mb-3">
+                            <label for="default_address" class="form-label">Default Address</label>
+                            <textarea class="form-control" name="default_address" id="default_address"
+                                      rows="2">{{ profile.default_address }}</textarea>
+                        </div>
+                        {% endif %}
+
+                        <div class="alert alert-info profile-info-box">
+                            <strong>Role:</strong> {{ profile.role|title }}<br>
+                            {% if profile.service_type %}
+                            <strong>Service Type:</strong> {{ profile.get_service_type_display }}<br>
+                            {% endif %}
+                            <strong>Username:</strong> {{ user.username }}
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Update Profile</button>
+                        <a href="{% url 'dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

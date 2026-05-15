@@ -1,0 +1,134 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Bill - {{ service_request.request_id }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.bill-container{max-width:600px;margin:0 auto;}
+.bill-header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;padding:2rem;border-radius:12px 12px 0 0;}
+.bill-body{background:white;padding:2rem;border-radius:0 0 12px 12px;box-shadow:0 4px 6px rgba(0,0,0,0.1);}
+.bill-row{display:flex;justify-content:space-between;padding:0.75rem 0;border-bottom:1px solid #f0f0f0;}
+.bill-row:last-child{border-bottom:none;}
+.bill-total{background:#f8f9fa;padding:1rem;border-radius:8px;margin-top:1rem;font-size:1.2rem;}
+.status-badge{font-size:0.9rem;padding:0.4rem 1rem;}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="bill-container">
+        <div class="bill-header text-center">
+            <h3 class="mb-1"><i class="bi bi-receipt"></i> Payment Receipt</h3>
+            <p class="mb-0 opacity-75">{{ service_request.request_id }}</p>
+        </div>
+
+        <div class="bill-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h5 class="mb-1">{{ service_request.get_service_type_display }}</h5>
+                    <small class="text-muted">
+                        <i class="bi bi-calendar"></i> {{ service_request.completed_at|date:"d M Y, h:i A" }}
+                    </small>
+                </div>
+                <span class="badge bg-success status-badge">{{ service_request.get_status_display }}</span>
+            </div>
+
+            <hr>
+
+            <h6 class="text-muted mb-3">Service Details</h6>
+
+            {% if service_request.service_type == 'fuel' %}
+            <div class="bill-row">
+                <span>Fuel ({{ service_request.fuel_quantity }} L × ₹{{ fuel_price_per_liter }})</span>
+                <span>₹{% widthratio service_request.fuel_quantity 1 fuel_price_per_liter %}</span>
+            </div>
+            <div class="bill-row">
+                <span>Distance ({{ service_request.distance_km }} km × ₹{{ distance_charge_per_km }})</span>
+                <span>₹{% widthratio service_request.distance_km 1 distance_charge_per_km %}</span>
+            </div>
+            <div class="bill-row">
+                <span>Service Charge</span>
+                <span>₹{{ service_charge }}</span>
+            </div>
+            {% else %}
+            <div class="bill-row">
+                <span>Service Type</span>
+                <span>{{ service_request.get_service_type_display }}</span>
+            </div>
+            {% endif %}
+
+            {% if service_request.issue_description %}
+            <div class="bill-row">
+                <span>Description</span>
+                <span style="max-width:60%;" class="text-end">{{ service_request.issue_description }}</span>
+            </div>
+            {% endif %}
+
+            <div class="bill-total">
+                <div class="d-flex justify-content-between fw-bold">
+                    <span>Total Paid</span>
+                    <span class="text-success">₹{{ service_request.final_cost }}</span>
+                </div>
+            </div>
+
+            {% if history %}
+            <hr>
+            <h6 class="text-muted mb-3">Payment Information</h6>
+            <div class="bill-row">
+                <span>Payment Method</span>
+                <span>{{ history.get_payment_method_display }}</span>
+            </div>
+            <div class="bill-row">
+                <span>Payment Date</span>
+                <span>{{ history.paid_at|date:"d M Y, h:i A" }}</span>
+            </div>
+            <div class="bill-row">
+                <span>Transaction Status</span>
+                <span class="badge bg-success">{{ history.get_payment_status_display }}</span>
+            </div>
+            {% endif %}
+
+            <hr>
+
+            <h6 class="text-muted mb-3">Provider Details</h6>
+            <div class="bill-row">
+                <span>Provider Name</span>
+                <span>{{ service_request.assigned_provider.get_full_name|default:service_request.assigned_provider.username }}</span>
+            </div>
+            <div class="bill-row">
+                <span>Contact</span>
+                <span>{{ service_request.assigned_provider.profile.phone_number|default:"N/A" }}</span>
+            </div>
+
+            <div class="text-center mt-4">
+                <a href="{% url 'request_detail' service_request.request_id %}" class="btn btn-outline-primary me-2">
+                    <i class="bi bi-arrow-left"></i> Back to Request
+                </a>
+                <button onclick="window.print()" class="btn btn-success me-2">
+                    <i class="bi bi-printer"></i> Print Bill
+                </button>
+                <button onclick="downloadBill()" class="btn btn-primary">
+                    <i class="bi bi-download"></i> Download Bill
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function downloadBill() {
+    const billContent = document.documentElement.outerHTML;
+    const blob = new Blob([billContent], {type: 'text/html'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'bill_{{ service_request.request_id }}.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+</script>
+{% endblock %}

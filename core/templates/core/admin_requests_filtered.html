@@ -1,0 +1,65 @@
+{% extends 'core/base.html' %}
+
+{% block title %}{{ status_display }} Requests{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-list-ul"></i> {{ status_display }} Requests</h2>
+        <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Request ID</th>
+                            <th>Customer</th>
+                            <th>Service</th>
+                            <th>Location</th>
+                            <th>Provider</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in requests %}
+                        <tr>
+                            <td><code>{{ req.request_id }}</code></td>
+                            <td>
+                                {{ req.user.get_full_name|default:req.user.username }}
+                                {% if req.user.profile.phone_number %}
+                                <br><small>{{ req.user.profile.phone_number }}</small>
+                                {% endif %}
+                            </td>
+                            <td>{{ req.get_service_type_display }}</td>
+                            <td>{{ req.location_address|default:req.location_lat }}</td>
+                            <td>
+                                {% if req.assigned_provider %}
+                                    {{ req.assigned_provider.get_full_name|default:req.assigned_provider.username }}
+                                {% else %}
+                                    <span class="text-muted">Unassigned</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ req.created_at|date:"M d, H:i" }}</td>
+                            <td>
+                                {% if req.status == 'pending' %}
+                                <a href="{% url 'admin_assign_provider' req.id %}" class="btn btn-sm btn-primary">Assign</a>
+                                {% endif %}
+                                <a href="{% url 'request_detail' req.request_id %}" class="btn btn-sm btn-outline-primary">View</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center text-muted">No {{ status_display|lower }} requests found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

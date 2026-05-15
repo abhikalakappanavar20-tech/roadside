@@ -1,0 +1,398 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Provider Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .status-badge-fuel { background: #ffc107; }
+    .status-badge-mechanic { background: #dc3545; }
+    .status-badge-tire { background: #0dcaf0; }
+    .status-badge-battery { background: #198754; }
+    .status-badge-tow { background: #6f42c1; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="bi bi-speedometer2"></i> Provider Dashboard</h2>
+            <p class="text-muted mb-0">Welcome back, {{ user.first_name }}!</p>
+        </div>
+        <div>
+            <form method="post" action="{% url 'toggle_availability' %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn {% if profile.is_available %}btn-danger{% else %}btn-success{% endif %}">
+                    <i class="bi bi-{% if profile.is_available %}pause{% else %}play{% endif %}-circle"></i>
+                    {{ profile.is_available|yesno:"Go Offline,Go Online" }}
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="row mb-4">
+        <div class="col-md-2 col-6">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-primary">{{ completed_count }}</h3>
+                    <p class="text-muted mb-0 small">Jobs Done</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 col-6">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-warning" id="pendingCount">-</h3>
+                    <p class="text-muted mb-0 small">Pending</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 col-6">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-info">{{ my_active_requests|length }}</h3>
+                    <p class="text-muted mb-0 small">Active</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 col-6">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-warning">
+                        {% if profile.average_rating > 0 %}{{ profile.average_rating }}{% else %}-{% endif %}
+                    </h3>
+                    <p class="text-muted mb-0 small">
+                        {% if profile.rating_count > 0 %}{{ profile.rating_count }} ratings{% else %}No ratings{% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 col-6">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-success">{{ profile.rating_count }}</h3>
+                    <p class="text-muted mb-0 small">Reviews</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 col-6">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="{% if profile.is_available %}text-success{% else %}text-secondary{% endif %}">
+                        <i class="bi bi-circle-fill" style="font-size: 1rem;"></i>
+                    </h3>
+                    <p class="text-muted mb-0 small">
+                        {% if profile.is_available %}Online{% else %}Offline{% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Requests Alert -->
+    {% if my_active_requests %}
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        <h5><i class="bi bi-briefcase"></i> You have {{ my_active_requests|length }} active job{{ my_active_requests|length|pluralize }}</h5>
+        <p class="mb-2">Please complete your current jobs before accepting new ones.</p>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <!-- Available Requests -->
+        <div class="col-lg-7">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-bell"></i> Available Requests
+                    </h5>
+                    <span class="badge bg-warning" id="refreshingBadge">Auto-refreshing...</span>
+                </div>
+                <div class="card-body">
+                    <div id="pendingRequestsContainer">
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status"></div>
+                            <p class="mt-2">Loading requests...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- My Active Jobs -->
+        <div class="col-lg-5">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-briefcase"></i> My Active Jobs
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if my_active_requests %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Request ID</th>
+                                    <th>Service</th>
+                                    <th>Status</th>
+                                    <th>Customer</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for req in my_active_requests %}
+                                <tr>
+                                    <td><code>{{ req.request_id }}</code></td>
+                                    <td>{{ req.get_service_type_display }}</td>
+                                    <td>
+                                        <span class="badge rounded-pill
+                                            {% if req.status == 'accepted' %}bg-info
+                                            {% elif req.status == 'in_progress' %}bg-primary
+                                            {% else %}bg-secondary{% endif %}">
+                                            {{ req.status|title }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if req.user.get_full_name %}
+                                            {{ req.user.get_full_name }}
+                                        {% else %}
+                                            {{ req.user.username }}
+                                        {% endif %}
+                                        {% if req.user.profile.phone_number %}
+                                        <br><small class="text-muted"><i class="bi bi-telephone"></i> {{ req.user.profile.phone_number }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'request_detail' req.request_id %}" class="btn btn-sm btn-outline-primary">View</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                        <p class="mt-2">No active jobs. Check available requests!</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Requests Table -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <h4>Recent Requests</h4>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Request ID</th>
+                            <th>Service</th>
+                            <th>Status</th>
+                            <th>Customer</th>
+                            <th>Location</th>
+                            <th>Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in my_recent_requests %}
+                        <tr>
+                            <td><code>{{ req.request_id }}</code></td>
+                            <td>{{ req.get_service_type_display }}</td>
+                            <td>
+                                <span class="badge rounded-pill
+                                    {% if req.status == 'pending' %}bg-warning
+                                    {% elif req.status == 'accepted' %}bg-info
+                                    {% elif req.status == 'in_progress' %}bg-primary
+                                    {% elif req.status == 'completed' %}bg-success
+                                    {% elif req.status == 'paid' %}bg-success
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ req.status|title }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if req.user.get_full_name %}
+                                    {{ req.user.get_full_name }}
+                                {% else %}
+                                    {{ req.user.username }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small class="text-muted">
+                                    {% if req.location_address %}
+                                        {{ req.location_address|truncatewords:3 }}
+                                    {% else %}
+                                        {{ req.location_lat }}, {{ req.location_long }}
+                                    {% endif %}
+                                </small>
+                            </td>
+                            <td>{{ req.created_at|date:"M d, H:i" }}</td>
+                            <td>
+                                <a href="{% url 'request_detail' req.request_id %}" class="btn btn-sm btn-outline-primary">View</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center text-muted">No requests yet. Accept your first request!</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Store last request IDs to detect new ones
+let lastRequestIds = [];
+
+// Fetch pending requests via AJAX
+function fetchPendingRequests() {
+    fetch('/api/pending-requests/')
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('pendingRequestsContainer');
+            const countBadge = document.getElementById('pendingCount');
+
+            if (data.requests && data.requests.length > 0) {
+                const currentRequestIds = data.requests.map(r => r.id);
+
+                // Check for new requests
+                const newRequests = currentRequestIds.filter(id => !lastRequestIds.includes(id));
+
+                countBadge.textContent = data.requests.length;
+
+                let html = '<div class="table-responsive"><table class="table table-hover mb-0">' +
+                    '<thead class="table-light"><tr><th>Service</th><th>Location</th><th>Customer</th><th>Time</th><th>Action</th></tr></thead><tbody>';
+
+                data.requests.forEach((req, index) => {
+                    const isNew = newRequests.includes(req.id);
+                    html += `
+                        <tr class="${isNew ? 'table-warning' : ''}">
+                            <td>
+                                <span class="badge status-badge-${req.service_type_code}">
+                                    ${req.service_type}
+                                </span>
+                                ${isNew ? '<span class="badge bg-danger ms-1">NEW</span>' : ''}
+                            </td>
+                            <td>
+                                <small>${req.location_address || req.location_lat.toFixed(4) + ', ' + req.location_long.toFixed(4)}</small>
+                            </td>
+                            <td>
+                                ${req.customer_name}
+                                ${req.customer_phone ? '<br><small class="text-muted"><i class="bi bi-telephone"></i> ' + req.customer_phone + '</small>' : ''}
+                            </td>
+                            <td><small>${req.time_ago}</small></td>
+                            <td>
+                                <button onclick="acceptRequest(${req.id})" class="btn btn-success btn-sm">
+                                    <i class="bi bi-check-circle"></i> Accept
+                                </button>
+                                <a href="https://www.google.com/maps/dir/?api=1&destination=${req.location_lat},${req.location_long}"
+                                   target="_blank" class="btn btn-outline-info btn-sm">
+                                    <i class="bi bi-map"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                html += '</tbody></table></div>';
+                container.innerHTML = html;
+                lastRequestIds = currentRequestIds;
+
+                // Play notification for new requests
+                if (newRequests.length > 0) {
+                    try {
+                        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUKzk8bllHAY2k9rxyXksBSh5xvDdlkEKGGm66OyrWBUIQp3g8r5vIAUlgs/yyIk1CB9qwv3knU8JDlOu5/G9ZR4GNpPa8cl5KwUofcnw3ZZBChoZtuDsK1gUCEKd3PK+bwFJYLN8siJNgn/atL95J9OCQ5Sru+/vWWcBjWQ2vHJeSsFKN1J8N2WQoYaGbfk7ytYFQhCndnyvm8B');
+                        audio.volume = 0.3;
+                        audio.play();
+                    } catch (e) {}
+                }
+            } else {
+                countBadge.textContent = '0';
+                container.innerHTML = `
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-check-circle" style="font-size: 3rem;"></i>
+                        <p class="mt-2">No pending requests right now.</p>
+                        <p class="small">We'll notify you when new requests come in!</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching requests:', error);
+            document.getElementById('pendingRequestsContainer').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i> Error loading requests. Retrying...
+                </div>
+            `;
+        });
+}
+
+// Accept a request
+function acceptRequest(requestId) {
+    SwalHelper.confirm('Are you sure you want to accept this request?', 'Accept Request?', 'Yes, accept it!', 'Cancel')
+        .then((result) => {
+            if (result.isConfirmed) {
+                fetch(`/api/accept/${requestId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire({
+                            title: 'Accepted!',
+                            text: 'Request accepted! Redirecting to details...',
+                            icon: 'success',
+                            timer: 1500,
+                            timerProgressBar: true,
+                            showConfirmButton: false
+                        }).then(() => {
+                            window.location.href = `/request/${data.request_id}/`;
+                        });
+                    } else {
+                        SwalHelper.error(data.error || 'Failed to accept request');
+                        fetchPendingRequests();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    SwalHelper.error('Failed to accept request');
+                });
+            }
+        });
+}
+
+// Get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Initial load and auto-refresh every 5 seconds
+fetchPendingRequests();
+setInterval(fetchPendingRequests, 5000);
+</script>
+{% endblock %}

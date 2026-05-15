@@ -1,0 +1,188 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-shield-lock"></i> Admin Dashboard</h2>
+        <a href="/admin/" class="btn btn-outline-secondary">
+            <i class="bi bi-gear"></i> Django Admin
+        </a>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 col-6">
+            <div class="card text-center bg-primary text-white">
+                <div class="card-body">
+                    <h3>{{ total_requests }}</h3>
+                    <p class="mb-0">Total Requests</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card text-center bg-warning">
+                <div class="card-body">
+                    <h3>{{ pending_requests }}</h3>
+                    <p class="mb-0">Pending</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card text-center bg-info text-white">
+                <div class="card-body">
+                    <h3>{{ active_requests }}</h3>
+                    <p class="mb-0">Active Jobs</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card text-center bg-success text-white">
+                <div class="card-body">
+                    <h3>{{ completed_requests }}</h3>
+                    <p class="mb-0">Completed/Paid</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5><i class="bi bi-people"></i> Users Overview</h5>
+                    <hr>
+                    <p><strong>Total Providers:</strong> {{ total_providers }}</p>
+                    <p><strong>Active Providers:</strong> <span class="badge bg-success">{{ active_providers }}</span></p>
+                    <p><strong>Total Customers:</strong> {{ total_customers }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-wrench-adjustable"></i> Providers</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Service Type</th>
+                                    <th>Rating</th>
+                                    <th>Status</th>
+                                    <th>Vehicle</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for provider in providers %}
+                                <tr>
+                                    <td>{{ provider.user.get_full_name|default:provider.user.username }}</td>
+                                    <td>{{ provider.get_service_type_display }}</td>
+                                    <td>
+                                        {% if provider.average_rating > 0 %}
+                                            <span class="text-warning">
+                                                <i class="bi bi-star-fill"></i> {{ provider.average_rating }}
+                                            </span>
+                                            <small class="text-muted">({{ provider.rating_count }})</small>
+                                        {% else %}
+                                            <small class="text-muted">No ratings</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge {% if provider.is_available %}bg-success{% else %}bg-danger{% endif %}">
+                                            {% if provider.is_available %}Available{% else %}Unavailable{% endif %}
+                                        </span>
+                                    </td>
+                                    <td>{{ provider.vehicle_number|default:"-" }}</td>
+                                    <td>
+                                        <a href="{% url 'admin_toggle_provider' provider.user_id %}"
+                                           class="btn btn-sm btn-outline-warning">
+                                            Toggle Status
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Requests -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-list-ul"></i> Recent Requests</h5>
+            <div class="btn-group btn-group-sm">
+                <a href="{% url 'requests_filtered' 'pending' %}" class="btn btn-outline-warning">Pending</a>
+                <a href="{% url 'requests_filtered' 'accepted' %}" class="btn btn-outline-info">Accepted</a>
+                <a href="{% url 'requests_filtered' 'in_progress' %}" class="btn btn-outline-primary">In Progress</a>
+                <a href="{% url 'requests_filtered' 'completed' %}" class="btn btn-outline-success">Completed</a>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Request ID</th>
+                            <th>Customer</th>
+                            <th>Service</th>
+                            <th>Status</th>
+                            <th>Provider</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in recent_requests %}
+                        <tr>
+                            <td><code>{{ req.request_id }}</code></td>
+                            <td>{{ req.user.get_full_name|default:req.user.username }}</td>
+                            <td>{{ req.get_service_type_display }}</td>
+                            <td>
+                                <span class="badge rounded-pill
+                                    {% if req.status == 'pending' %}bg-warning
+                                    {% elif req.status == 'accepted' %}bg-info
+                                    {% elif req.status == 'in_progress' %}bg-primary
+                                    {% elif req.status == 'completed' %}bg-success
+                                    {% elif req.status == 'paid' %}bg-success
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ req.status|title }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if req.assigned_provider %}
+                                    {{ req.assigned_provider.get_full_name|default:req.assigned_provider.username }}
+                                {% else %}
+                                    <span class="text-muted">Unassigned</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ req.created_at|date:"M d, H:i" }}</td>
+                            <td>
+                                {% if req.status == 'pending' %}
+                                <a href="{% url 'admin_assign_provider' req.id %}" class="btn btn-sm btn-primary">Assign</a>
+                                {% endif %}
+                                <a href="{% url 'request_detail' req.request_id %}" class="btn btn-sm btn-outline-primary">View</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-refresh every 15 seconds for admin
+setTimeout(function() {
+    location.reload();
+}, 15000);
+</script>
+{% endblock %}

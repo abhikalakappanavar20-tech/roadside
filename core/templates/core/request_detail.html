@@ -1,0 +1,372 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Request {{ service_request.request_id }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    #map {
+        height: 300px;
+        width: 100%;
+        border-radius: 10px;
+    }
+    .status-timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+    .status-timeline::before {
+        content: '';
+        position: absolute;
+        left: 10px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #dee2e6;
+    }
+    .timeline-item {
+        position: relative;
+        padding-bottom: 1.5rem;
+    }
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -24px;
+        top: 5px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #6c757d;
+        border: 2px solid white;
+        box-shadow: 0 0 0 2px #6c757d;
+    }
+    .timeline-item.active::before {
+        background: #0d6efd;
+        box-shadow: 0 0 0 2px #0d6efd;
+    }
+    .timeline-item.completed::before {
+        background: #198754;
+        box-shadow: 0 0 0 2px #198754;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item active">{{ service_request.request_id }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Request Details Card -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-file-text"></i> {{ service_request.request_id }}
+                    </h5>
+                    <span class="badge rounded-pill fs-6
+                        {% if service_request.status == 'pending' %}bg-warning
+                        {% elif service_request.status == 'accepted' %}bg-info
+                        {% elif service_request.status == 'in_progress' %}bg-primary
+                        {% elif service_request.status == 'completed' %}bg-success
+                        {% elif service_request.status == 'paid' %}bg-success
+                        {% else %}bg-secondary{% endif %}">
+                        {{ service_request.status|title }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Service Type:</strong> {{ service_request.get_service_type_display }}</p>
+                            <p><strong>Created:</strong> {{ service_request.created_at|date:"M d, Y H:i" }}</p>
+                            {% if service_request.accepted_at %}
+                            <p><strong>Accepted:</strong> {{ service_request.accepted_at|date:"M d, Y H:i" }}</p>
+                            {% endif %}
+                            {% if service_request.started_at %}
+                            <p><strong>Started:</strong> {{ service_request.started_at|date:"M d, Y H:i" }}</p>
+                            {% endif %}
+                            {% if service_request.completed_at %}
+                            <p><strong>Completed:</strong> {{ service_request.completed_at|date:"M d, Y H:i" }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Location:</strong></p>
+                            <p class="text-muted">{{ service_request.location_address|default:"Not specified" }}</p>
+                            <p class="small">
+                                <i class="bi bi-geo-alt"></i>
+                                {{ service_request.location_lat }}, {{ service_request.location_long }}
+                            </p>
+                        </div>
+                    </div>
+                    {% if service_request.issue_description %}
+                    <hr>
+                    <p><strong>Issue Description:</strong></p>
+                    <p class="text-muted">{{ service_request.issue_description }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Map -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-map"></i> Location Map</h5>
+                </div>
+                <div class="card-body">
+                    <div id="map"></div>
+                    <a href="https://www.google.com/maps/dir/?api=1&destination={{ service_request.location_lat }},{{ service_request.location_long }}"
+                       target="_blank" class="btn btn-outline-primary">
+                        <i class="bi bi-navigation"></i> Open in Google Maps
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <!-- Status Timeline -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-clock-history"></i> Status Timeline</h5>
+                </div>
+                <div class="card-body">
+                    <div class="status-timeline">
+                        <div class="timeline-item completed">
+                            <strong>Request Created</strong>
+                            <div class="small text-muted">{{ service_request.created_at|date:"H:i" }}</div>
+                        </div>
+                        {% if service_request.status == 'pending' %}
+                        <div class="timeline-item active">
+                            <strong>Waiting for Provider</strong>
+                            <div class="small text-muted">Finding nearby providers...</div>
+                        </div>
+                        {% else %}
+                        <div class="timeline-item completed">
+                            <strong>Provider Accepted</strong>
+                            <div class="small text-muted">{{ service_request.accepted_at|date:"H:i"|default:"--" }}</div>
+                        </div>
+                        {% endif %}
+                        {% if service_request.status == 'in_progress' or service_request.status == 'completed' or service_request.status == 'paid' %}
+                        <div class="timeline-item completed">
+                            <strong>Service In Progress</strong>
+                            <div class="small text-muted">{{ service_request.started_at|date:"H:i"|default:"--" }}</div>
+                        </div>
+                        {% else %}
+                        <div class="timeline-item">
+                            <strong>Service In Progress</strong>
+                            <div class="small text-muted">Pending</div>
+                        </div>
+                        {% endif %}
+                        {% if service_request.status == 'completed' or service_request.status == 'paid' %}
+                        <div class="timeline-item completed">
+                            <strong>Service Completed</strong>
+                            <div class="small text-muted">{{ service_request.completed_at|date:"H:i"|default:"--" }}</div>
+                        </div>
+                        {% else %}
+                        <div class="timeline-item">
+                            <strong>Service Completed</strong>
+                            <div class="small text-muted">Pending</div>
+                        </div>
+                        {% endif %}
+                        {% if service_request.status == 'paid' %}
+                        <div class="timeline-item completed">
+                            <strong>Payment Confirmed</strong>
+                            <div class="small text-muted">Paid</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Provider Info (if assigned) -->
+            {% if service_request.assigned_provider %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-person-check"></i> Assigned Provider</h5>
+                </div>
+                <div class="card-body">
+                    <h6>{{ service_request.assigned_provider.get_full_name|default:service_request.assigned_provider.username }}</h6>
+                    {% if service_request.assigned_provider.profile.phone_number %}
+                    <p class="mb-2">
+                        <i class="bi bi-telephone"></i>
+                        <a href="tel:{{ service_request.assigned_provider.profile.phone_number }}">
+                            {{ service_request.assigned_provider.profile.phone_number }}
+                        </a>
+                    </p>
+                    {% endif %}
+                    {% if service_request.assigned_provider.profile.vehicle_number %}
+                    <p class="mb-0">
+                        <i class="bi bi-car-front"></i>
+                        {{ service_request.assigned_provider.profile.vehicle_number }}
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Service Photo -->
+            {% if service_request.status == 'completed' or service_request.status == 'paid' %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-camera"></i> Service Photo</h5>
+                </div>
+                <div class="card-body">
+                    {% if service_request.customer_photo %}
+                    <div class="text-center">
+                        <img src="{{ service_request.customer_photo.url }}" alt="Service photo" 
+                             class="img-fluid rounded" style="max-height: 300px;">
+                        <p class="small text-muted mt-2">Photo uploaded by customer</p>
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted">
+                        <i class="bi bi-image" style="font-size: 3rem;"></i>
+                        <p class="mt-2">No photo uploaded yet</p>
+                        {% if user.profile.role == 'customer' %}
+                        <a href="{% url 'upload_photo' service_request.request_id %}" class="btn btn-primary btn-sm">
+                            <i class="bi bi-upload"></i> Upload Photo
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Actions -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-lightning"></i> Actions</h5>
+                </div>
+                <div class="card-body">
+                    {% if user.profile.role == 'customer' %}
+                        {% if service_request.status == 'completed' %}
+                        <a href="{% url 'payment_page' service_request.request_id %}" class="btn btn-success w-100 mb-2">
+                            <i class="bi bi-credit-card"></i> Pay Now
+                        </a>
+                        <p class="text-muted small text-center">
+                            Amount: &#8377;{{ service_request.final_cost|default:"500-800" }}
+                        </p>
+                        {% elif service_request.status == 'paid' %}
+                        <div class="alert alert-success mb-2">
+                            <i class="bi bi-check-circle"></i> Payment Completed!
+                            <br>&#8377;{{ service_request.final_cost }}
+                            {% if history and history.payment_method %}
+                            <br><small>via {{ history.get_payment_method_display }}</small>
+                            {% endif %}
+                        </div>
+                        <a href="{% url 'view_bill' service_request.request_id %}" class="btn btn-info w-100">
+                            <i class="bi bi-receipt"></i> View Bill
+                        </a>
+                        {% if history and history.rating %}
+                        <div class="mt-3 text-center">
+                            <p class="mb-1 small text-muted">Your Rating:</p>
+                            <div class="text-warning">
+                                {% for i in "12345" %}
+                                    {% if forloop.counter <= history.rating %}
+                                        <i class="bi bi-star-fill"></i>
+                                    {% else %}
+                                        <i class="bi bi-star"></i>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            {% if history.review %}
+                            <p class="small text-muted mt-2 mb-0"><em>"{{ history.review }}"</em></p>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <a href="{% url 'rate_service' service_request.request_id %}" class="btn btn-warning w-100 mt-2">
+                            <i class="bi bi-star"></i> Rate Service
+                        </a>
+                        {% endif %}
+                        {% else %}
+                        <p class="text-muted mb-0">
+                            <i class="bi bi-info-circle"></i>
+                            {% if service_request.status == 'pending' %}
+                            Waiting for a provider to accept your request...
+                            {% elif service_request.status == 'accepted' %}
+                            Provider is on the way!
+                            {% elif service_request.status == 'in_progress' %}
+                            Provider is working on your vehicle.
+                            {% endif %}
+                        </p>
+                        {% endif %}
+                    {% elif user.profile.role == 'provider' %}
+                        {% if service_request.status == 'accepted' %}
+                        <form method="post" action="{% url 'start_service' service_request.request_id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary w-100 mb-2">
+                                <i class="bi bi-play-circle"></i> Start Service
+                            </button>
+                        </form>
+                        {% elif service_request.status == 'in_progress' %}
+                        <form method="post" action="{% url 'complete_service' service_request.request_id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success w-100 mb-2">
+                                <i class="bi bi-check-circle"></i> Complete Service
+                            </button>
+                        </form>
+                        {% elif service_request.status == 'completed' %}
+                        <div class="alert alert-info mb-0">
+                            <i class="bi bi-hourglass"></i> Waiting for customer payment confirmation...
+                        </div>
+                        {% endif %}
+                        <a href="tel:{{ service_request.user.profile.phone_number }}" class="btn btn-outline-primary w-100">
+                            <i class="bi bi-telephone"></i> Call Customer
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Initialize map with request location
+const lat = parseFloat("{{ service_request.location_lat|default:'0' }}");
+const lng = parseFloat("{{ service_request.location_long|default:'0' }}");
+
+const map = L.map('map').setView([lat, lng], 15);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
+
+// Add marker for request location
+L.marker([lat, lng]).addTo(map)
+    .bindPopup('<b>{{ service_request.get_service_type_display }}</b><br>{{ service_request.request_id }}')
+    .openPopup();
+
+</script>
+{% if service_request.assigned_provider and service_request.assigned_provider.profile %}
+{% if service_request.assigned_provider.profile.latitude and service_request.assigned_provider.profile.longitude %}
+<script>
+// Add provider location if available
+const providerLat = parseFloat("{{ service_request.assigned_provider.profile.latitude|default:'0' }}");
+const providerLng = parseFloat("{{ service_request.assigned_provider.profile.longitude|default:'0' }}");
+
+if (!Number.isNaN(providerLat) && !Number.isNaN(providerLng)) {
+    const providerMarker = L.marker([providerLat, providerLng], {
+        icon: L.divIcon({
+            className: 'provider-marker',
+            html: '<i class="bi bi-wrench-adjustable text-primary"></i>',
+            iconSize: [30, 30]
+        })
+    }).addTo(map);
+    providerMarker.bindPopup('<b>Provider Location</b>');
+
+    // Draw line between provider and customer
+    L.polyline([[providerLat, providerLng], [lat, lng]], {
+        color: 'blue',
+        dashArray: '5, 10'
+    }).addTo(map);
+}
+</script>
+{% endif %}
+{% endif %}
+{% endblock %}

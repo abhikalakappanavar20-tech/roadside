@@ -1,0 +1,247 @@
+{% extends 'core/base.html' %}
+
+{% block title %}New Service Request{% endblock %}
+
+{% block extra_css %}
+<style>
+    #map {
+        height: 400px;
+        width: 100%;
+        border-radius: 10px;
+        margin-bottom: 1rem;
+    }
+    .service-btn {
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        border-radius: 15px;
+        transition: all 0.3s;
+        height: 100%;
+    }
+    .service-btn:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    .service-btn.selected {
+        outline: 3px solid #0d6efd;
+        transform: scale(1.02);
+    }
+    .service-icon {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+    }
+    .location-info {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-radius: 10px;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4"><i class="bi bi-geo-alt"></i> Request Roadside Assistance</h2>
+        </div>
+    </div>
+
+    <form method="post" id="requestForm">
+        {% csrf_token %}
+
+        <!-- Service Type Selection -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h4 class="mb-3">What do you need?</h4>
+            </div>
+            <div class="col-md-3 col-6">
+                <button type="button" class="btn btn-outline-warning service-btn w-100" data-service="fuel">
+                    <div class="service-icon"><i class="bi bi-fuel-pump"></i></div>
+                    <div class="fw-bold">Fuel Delivery</div>
+                    <small>Get fuel delivered to your location</small>
+                </button>
+            </div>
+            <div class="col-md-3 col-6">
+                <button type="button" class="btn btn-outline-danger service-btn w-100" data-service="mechanic">
+                    <div class="service-icon"><i class="bi bi-wrench"></i></div>
+                    <div class="fw-bold">Mechanic</div>
+                    <small>Breakdown & repair assistance</small>
+                </button>
+            </div>
+            <div class="col-md-3 col-6">
+                <button type="button" class="btn btn-outline-info service-btn w-100" data-service="tire">
+                    <div class="service-icon"><i class="bi bi-circle"></i></div>
+                    <div class="fw-bold">Tire Puncture</div>
+                    <small>Flat tire repair or replacement</small>
+                </button>
+            </div>
+            <div class="col-md-3 col-6">
+                <button type="button" class="btn btn-outline-success service-btn w-100" data-service="battery">
+                    <div class="service-icon"><i class="bi bi-lightning-charge"></i></div>
+                    <div class="fw-bold">Battery Jumpstart</div>
+                    <small>Quick battery jumpstart service</small>
+                </button>
+            </div>
+            <input type="hidden" name="service_type" id="service_type" required>
+        </div>
+
+        <!-- Location Detection -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <h4 class="mb-3">Your Location</h4>
+                <div id="map"></div>
+                <div class="location-info">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-geo-alt-fill text-danger me-2" style="font-size: 1.5rem;"></i>
+                        <div>
+                            <div id="location-status" class="fw-bold">Detecting your location...</div>
+                            <div id="location-coords" class="text-muted small"></div>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-outline-primary" id="refreshLocation">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh Location
+                </button>
+                <input type="hidden" name="latitude" id="latitude" required>
+                <input type="hidden" name="longitude" id="longitude" required>
+                <input type="hidden" name="address" id="address">
+            </div>
+            <div class="col-md-4">
+                <h4 class="mb-3">Details</h4>
+                <div class="mb-3">
+                    <label for="description" class="form-label">Describe your issue</label>
+                    <textarea class="form-control" name="description" id="description" rows="5"
+                        placeholder="E.g., Car won't start, need 5 liters petrol, flat front tire..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary w-100 btn-lg" id="submitBtn" disabled>
+                    <i class="bi bi-send"></i> Submit Request
+                </button>
+                <div class="form-text text-center mt-2">
+                    <small>Estimated arrival: 15-30 minutes</small>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let map;
+let marker;
+let userLat = null;
+let userLng = null;
+
+// Initialize Leaflet Map
+function initMap() {
+    // Default view (will be updated with user location)
+    map = L.map('map').setView([20.5937, 78.9629], 5); // India center
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Try to get user location
+    getUserLocation();
+}
+
+// Get User Location
+function getUserLocation() {
+    const statusDiv = document.getElementById('location-status');
+    const coordsDiv = document.getElementById('location-coords');
+
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                userLat = position.coords.latitude;
+                userLng = position.coords.longitude;
+
+                // Update form fields
+                document.getElementById('latitude').value = userLat;
+                document.getElementById('longitude').value = userLng;
+
+                // Update map
+                map.setView([userLat, userLng], 16);
+
+                // Add or update marker
+                if (marker) {
+                    marker.setLatLng([userLat, userLng]);
+                } else {
+                    marker = L.marker([userLat, userLng]).addTo(map);
+                }
+
+                marker.bindPopup("<b>You are here!</b>").openPopup();
+
+                // Update status display
+                statusDiv.textContent = "Location detected!";
+                statusDiv.className = "fw-bold text-success";
+                coordsDiv.textContent = `${userLat.toFixed(6)}, ${userLng.toFixed(6)}`;
+
+                // Reverse geocode for address (using Nominatim)
+                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${userLat}&lon=${userLng}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        const address = data.display_name || 'Location detected';
+                        document.getElementById('address').value = address;
+                        coordsDiv.textContent = address;
+                    });
+
+                checkFormValid();
+            },
+            function(error) {
+                statusDiv.textContent = "Location detection failed. Please enable location access.";
+                statusDiv.className = "fw-bold text-danger";
+                coordsDiv.textContent = "Error: " + error.message;
+            }
+        );
+    } else {
+        statusDiv.textContent = "Geolocation is not supported by your browser";
+        statusDiv.className = "fw-bold text-danger";
+    }
+}
+
+// Service Type Selection
+document.querySelectorAll('.service-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        // Remove selected from all
+        document.querySelectorAll('.service-btn').forEach(b => {
+            b.classList.remove('selected', 'btn-primary');
+            const outlineClass = Array.from(b.classList).find(c => c.startsWith('btn-outline-'));
+            if (outlineClass) b.classList.add(outlineClass);
+        });
+
+        // Add selected to clicked
+        this.classList.add('selected', 'btn-primary');
+        this.classList.remove('btn-outline-warning', 'btn-outline-danger', 'btn-outline-info', 'btn-outline-success');
+
+        // Set hidden input
+        document.getElementById('service_type').value = this.dataset.service;
+
+        checkFormValid();
+    });
+});
+
+// Check if form is valid
+function checkFormValid() {
+    const serviceType = document.getElementById('service_type').value;
+    const lat = document.getElementById('latitude').value;
+    const submitBtn = document.getElementById('submitBtn');
+
+    if (serviceType && lat) {
+        submitBtn.disabled = false;
+    } else {
+        submitBtn.disabled = true;
+    }
+}
+
+// Refresh Location
+document.getElementById('refreshLocation').addEventListener('click', function() {
+    document.getElementById('location-status').textContent = "Updating location...";
+    document.getElementById('location-status').className = "fw-bold text-info";
+    getUserLocation();
+});
+
+// Initialize on load
+document.addEventListener('DOMContentLoaded', initMap);
+</script>
+{% endblock %}

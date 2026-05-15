@@ -1,0 +1,42 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Assign Provider{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card mt-5">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-person-plus"></i> Assign Provider to {{ service_request.request_id }}</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Service Type:</strong> {{ service_request.get_service_type_display }}</p>
+                    <p><strong>Location:</strong> {{ service_request.location_address|default:service_request.location_lat }}</p>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="provider_id" class="form-label">Select Provider</label>
+                            <select name="provider_id" id="provider_id" class="form-select" required>
+                                <option value="">-- Choose a provider --</option>
+                                {% for provider in providers %}
+                                <option value="{{ provider.user_id }}">
+                                    {{ provider.user.get_full_name|default:provider.user.username }}
+                                    ({{ provider.get_service_type_display }})
+                                    {% if provider.vehicle_number %}- {{ provider.vehicle_number }}{% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">Assign Provider</button>
+                            <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

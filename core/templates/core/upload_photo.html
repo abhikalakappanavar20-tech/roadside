@@ -1,0 +1,318 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Upload Photo - {{ service_request.request_id }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .photo-preview {
+        max-width: 100%;
+        max-height: 400px;
+        border-radius: 10px;
+        display: none;
+    }
+    .photo-preview.show {
+        display: block;
+    }
+    .upload-area {
+        border: 2px dashed #ccc;
+        border-radius: 10px;
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        background: #f8f9fa;
+    }
+    .upload-area:hover {
+        border-color: #0d6efd;
+        background: #e7f1ff;
+    }
+    .upload-area.dragover {
+        border-color: #0d6efd;
+        background: #e7f1ff;
+    }
+    .camera-container {
+        border: 3px solid #0d6efd;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 1rem;
+        background: #000;
+    }
+    .camera-container video,
+    .camera-container canvas {
+        width: 100%;
+        display: block;
+    }
+    #capturedCanvas {
+        display: none;
+    }
+    .camera-controls {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: center;
+        margin-top: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'request_detail' service_request.request_id %}">{{ service_request.request_id }}</a></li>
+                    <li class="breadcrumb-item active">Upload Photo</li>
+                </ol>
+            </nav>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-camera"></i> Upload Service Photo</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Upload a photo or capture one using your camera.</p>
+
+                    {% if service_request.customer_photo %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> You have already uploaded a photo.
+                    </div>
+                    <div class="text-center mb-3">
+                        <img src="{{ service_request.customer_photo.url }}" alt="Uploaded photo" 
+                             class="img-fluid rounded" style="max-height: 300px;">
+                    </div>
+                    {% endif %}
+
+                    <ul class="nav nav-tabs mb-3" id="photoTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload-pane" type="button" role="tab">
+                                <i class="bi bi-upload"></i> Upload
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="camera-tab" data-bs-toggle="tab" data-bs-target="#camera-pane" type="button" role="tab">
+                                <i class="bi bi-camera-video"></i> Take Photo
+                            </button>
+                        </li>
+                    </ul>
+
+                    <form method="post" enctype="multipart/form-data" id="uploadForm">
+                        {% csrf_token %}
+                        
+                        <div class="tab-content" id="photoTabContent">
+                            <div class="tab-pane fade show active" id="upload-pane" role="tabpanel">
+                                <div class="upload-area mb-3" id="uploadArea">
+                                    <i class="bi bi-cloud-arrow-up display-4 text-primary"></i>
+                                    <p class="mt-2 mb-0">Click or drag to select a photo</p>
+                                    <small class="text-muted">JPG, PNG, WEBP (Max 5MB)</small>
+                                    <input type="file" name="photo" id="photoInput" 
+                                           accept="image/*" class="d-none">
+                                </div>
+                            </div>
+                            
+                            <div class="tab-pane fade" id="camera-pane" role="tabpanel">
+                                <div class="camera-container" id="cameraContainer">
+                                    <video id="video" autoplay playsinline></video>
+                                    <canvas id="capturedCanvas"></canvas>
+                                </div>
+                                
+                                <div class="camera-controls">
+                                    <button type="button" class="btn btn-primary" id="startCameraBtn">
+                                        <i class="bi bi-camera"></i> Start Camera
+                                    </button>
+                                    <button type="button" class="btn btn-success d-none" id="captureBtn">
+                                        <i class="bi bi-camera-fill"></i> Capture
+                                    </button>
+                                    <button type="button" class="btn btn-danger d-none" id="retakeBtn">
+                                        <i class="bi bi-arrow-counterclockwise"></i> Retake
+                                    </button>
+                                </div>
+                                
+                                <input type="file" name="photo" id="cameraPhotoInput" class="d-none">
+                                <p class="text-muted small text-center mt-2" id="cameraStatus"></p>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <img id="photoPreview" class="photo-preview w-100" alt="Preview">
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
+                                <i class="bi bi-upload"></i> Upload Photo
+                            </button>
+                            <a href="{% url 'request_detail' service_request.request_id %}" class="btn btn-outline-secondary">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const uploadArea = document.getElementById('uploadArea');
+    const photoInput = document.getElementById('photoInput');
+    const photoPreview = document.getElementById('photoPreview');
+    const submitBtn = document.getElementById('submitBtn');
+    const uploadForm = document.getElementById('uploadForm');
+    const cameraTab = document.getElementById('camera-tab');
+    const uploadTab = document.getElementById('upload-tab');
+
+    // Camera elements
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('capturedCanvas');
+    const cameraContainer = document.getElementById('cameraContainer');
+    const cameraPhotoInput = document.getElementById('cameraPhotoInput');
+    const startCameraBtn = document.getElementById('startCameraBtn');
+    const captureBtn = document.getElementById('captureBtn');
+    const retakeBtn = document.getElementById('retakeBtn');
+    const cameraStatus = document.getElementById('cameraStatus');
+
+    let stream = null;
+    let capturedDataUrl = null;
+
+    // Upload functionality
+    uploadArea.addEventListener('click', () => photoInput.click());
+
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        if (e.dataTransfer.files.length) {
+            photoInput.files = e.dataTransfer.files;
+            previewFile(photoInput.files[0]);
+        }
+    });
+
+    photoInput.addEventListener('change', function() {
+        if (this.files.length) {
+            previewFile(this.files[0]);
+        }
+    });
+
+    function previewFile(file) {
+        if (file.size > 5 * 1024 * 1024) {
+            Swal.fire('Error', 'File size must be less than 5MB', 'error');
+            photoInput.value = '';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            photoPreview.src = e.target.result;
+            photoPreview.classList.add('show');
+            submitBtn.disabled = false;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // Camera functionality
+    async function startCamera() {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: 'environment' } 
+            });
+            video.srcObject = stream;
+            video.style.display = 'block';
+            canvas.style.display = 'none';
+            
+            startCameraBtn.classList.add('d-none');
+            captureBtn.classList.remove('d-none');
+            retakeBtn.classList.add('d-none');
+            cameraStatus.textContent = 'Camera active. Click Capture to take a photo.';
+            
+            capturedDataUrl = null;
+            photoPreview.classList.remove('show');
+            submitBtn.disabled = true;
+        } catch (err) {
+            console.error('Camera error:', err);
+            Swal.fire('Camera Error', 'Could not access camera. Please allow camera permission or upload a photo instead.', 'error');
+        }
+    }
+
+    function stopCamera() {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            stream = null;
+        }
+    }
+
+    function capturePhoto() {
+        const context = canvas.getContext('2d');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context.drawImage(video, 0, 0);
+        
+        capturedDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+        
+        video.style.display = 'none';
+        canvas.style.display = 'block';
+        captureBtn.classList.add('d-none');
+        retakeBtn.classList.remove('d-none');
+        
+        photoPreview.src = capturedDataUrl;
+        photoPreview.classList.add('show');
+        submitBtn.disabled = false;
+        
+        const byteString = atob(capturedDataUrl.split(',')[1]);
+        const mimeString = capturedDataUrl.split(',')[0].split(':')[1].split(';')[0];
+        const ab = new ArrayBuffer(byteString.length);
+        const ia = new Uint8Array(ab);
+        for (let i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+        }
+        const blob = new Blob([ab], {type: mimeString});
+        const file = new File([blob], 'camera_photo.jpg', {type: 'image/jpeg'});
+        
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        cameraPhotoInput.files = dataTransfer.files;
+        
+        cameraStatus.textContent = 'Photo captured! You can retake or upload this photo.';
+    }
+
+    function retakePhoto() {
+        startCamera();
+    }
+
+    startCameraBtn.addEventListener('click', startCamera);
+    captureBtn.addEventListener('click', capturePhoto);
+    retakeBtn.addEventListener('click', retakePhoto);
+
+    cameraTab.addEventListener('click', () => {
+        stopCamera();
+        startCamera();
+        photoInput.removeAttribute('required');
+        cameraPhotoInput.setAttribute('required', 'required');
+    });
+
+    uploadTab.addEventListener('click', () => {
+        stopCamera();
+        cameraPhotoInput.removeAttribute('required');
+        photoInput.setAttribute('required', 'required');
+    });
+
+    uploadForm.addEventListener('submit', function(e) {
+        const fileInput = photoInput.files.length ? photoInput : cameraPhotoInput;
+        if (!fileInput.files.length) {
+            e.preventDefault();
+            Swal.fire('Error', 'Please select or capture a photo', 'error');
+        }
+    });
+
+    photoInput.setAttribute('required', 'required');
+</script>
+{% endblock %}

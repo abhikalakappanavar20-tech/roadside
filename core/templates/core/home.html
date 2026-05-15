@@ -1,0 +1,822 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Roadside Assist - Home{% endblock %}
+
+{% block content %}
+<style>
+    /* ===== LANDING NAVBAR ===== */
+    .landing-navbar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        padding: 1rem 0;
+        transition: all 0.3s;
+    }
+    .landing-navbar .navbar-brand {
+        color: white;
+        font-size: 1.75rem;
+        font-weight: 800;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .landing-navbar .nav-link {
+        color: rgba(255,255,255,0.9);
+        font-weight: 500;
+        margin-left: 1.5rem;
+        transition: color 0.3s;
+    }
+    .landing-navbar .nav-link:hover {
+        color: white;
+    }
+    .landing-navbar .btn-nav {
+        border: 2px solid white;
+        color: white;
+        border-radius: 50px;
+        padding: 0.4rem 1.2rem;
+        font-weight: 500;
+        margin-left: 1rem;
+        transition: all 0.3s;
+    }
+    .landing-navbar .btn-nav:hover {
+        background: white;
+        color: #667eea;
+    }
+
+    /* ===== HERO SECTION ===== */
+    .hero-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        position: relative;
+        overflow: hidden;
+        padding-top: 80px;
+        padding-bottom: 3rem;
+    }
+    /* Floating animated shapes */
+    .hero-section .shape {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.05);
+        animation: float 20s infinite ease-in-out;
+    }
+    .shape-1 {
+        width: 300px;
+        height: 300px;
+        top: -100px;
+        left: -100px;
+        animation-delay: 0s;
+    }
+    .shape-2 {
+        width: 200px;
+        height: 200px;
+        bottom: 10%;
+        right: -50px;
+        animation-delay: -5s;
+    }
+    .shape-3 {
+        width: 150px;
+        height: 150px;
+        top: 40%;
+        left: 10%;
+        animation-delay: -10s;
+    }
+    .shape-4 {
+        width: 100px;
+        height: 100px;
+        bottom: 20%;
+        left: 30%;
+        animation-delay: -15s;
+    }
+    @keyframes float {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        33% { transform: translate(30px, -30px) scale(1.05); }
+        66% { transform: translate(-20px, 20px) scale(0.95); }
+    }
+
+    .hero-content {
+        text-align: center;
+        padding: 2rem;
+        position: relative;
+        z-index: 2;
+    }
+    .hero-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(255,255,255,0.15);
+        backdrop-filter: blur(10px);
+        padding: 0.5rem 1.25rem;
+        border-radius: 50px;
+        font-size: 0.9rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+    .hero-badge .pulse-dot {
+        width: 8px;
+        height: 8px;
+        background: #4ade80;
+        border-radius: 50%;
+        animation: pulse-dot 2s infinite;
+    }
+    @keyframes pulse-dot {
+        0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); }
+        50% { opacity: 0.8; box-shadow: 0 0 0 8px rgba(74, 222, 128, 0); }
+    }
+    .hero-title {
+        font-size: 4rem;
+        font-weight: 800;
+        margin-bottom: 1rem;
+        line-height: 1.1;
+        text-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        letter-spacing: -1px;
+    }
+    .hero-title i {
+        display: inline-block;
+        animation: truck-bounce 3s infinite ease-in-out;
+    }
+    @keyframes truck-bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-8px); }
+    }
+    .hero-subtitle {
+        font-size: 1.35rem;
+        margin-bottom: 2.5rem;
+        opacity: 0.92;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+        font-weight: 300;
+    }
+    .hero-cta {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-bottom: 3rem;
+    }
+    .btn-hero-primary {
+        background: white;
+        color: #667eea;
+        padding: 0.9rem 2.5rem;
+        border-radius: 50px;
+        font-weight: 700;
+        font-size: 1.1rem;
+        border: none;
+        transition: all 0.3s;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    .btn-hero-primary:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        background: #f8f9fa;
+    }
+    .btn-hero-outline {
+        border: 2px solid rgba(255,255,255,0.5);
+        color: white;
+        padding: 0.9rem 2.5rem;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        transition: all 0.3s;
+        background: transparent;
+    }
+    .btn-hero-outline:hover {
+        background: rgba(255,255,255,0.15);
+        border-color: white;
+        color: white;
+    }
+
+    /* Scroll indicator */
+    .scroll-indicator {
+        position: absolute;
+        bottom: 2rem;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        color: rgba(255,255,255,0.7);
+        font-size: 0.85rem;
+        animation: bounce-down 2s infinite;
+        cursor: pointer;
+        text-decoration: none;
+    }
+    .scroll-indicator i {
+        font-size: 1.5rem;
+    }
+    @keyframes bounce-down {
+        0%, 100% { transform: translateX(-50%) translateY(0); }
+        50% { transform: translateX(-50%) translateY(8px); }
+    }
+
+    /* ===== STATS BAR ===== */
+    .stats-bar {
+        background: white;
+        padding: 2.5rem 0;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        position: relative;
+        z-index: 3;
+        margin-top: -2rem;
+        border-radius: 1rem;
+        margin-left: 1rem;
+        margin-right: 1rem;
+    }
+    .stat-item {
+        text-align: center;
+        padding: 0.5rem;
+    }
+    .stat-number {
+        font-size: 2.2rem;
+        font-weight: 800;
+        color: #667eea;
+        line-height: 1;
+    }
+    .stat-label {
+        color: #6b7280;
+        font-size: 0.9rem;
+        margin-top: 0.25rem;
+    }
+
+    /* ===== ROLE CARDS ===== */
+    .role-section {
+        padding: 5rem 0;
+        background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
+    }
+    .section-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+    .section-header h2 {
+        font-size: 2.25rem;
+        font-weight: 800;
+        color: #1f2937;
+        margin-bottom: 0.5rem;
+    }
+    .section-header p {
+        color: #6b7280;
+        font-size: 1.1rem;
+        max-width: 500px;
+        margin: 0 auto;
+    }
+    .role-cards {
+        display: flex;
+        gap: 2rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    .role-card {
+        background: white;
+        border-radius: 24px;
+        padding: 2.5rem 2rem;
+        width: 340px;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        border: 1px solid #e5e7eb;
+        position: relative;
+        overflow: hidden;
+    }
+    .role-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 5px;
+        transition: height 0.3s;
+    }
+    .role-card:hover {
+        transform: translateY(-12px);
+        box-shadow: 0 25px 50px rgba(0,0,0,0.1);
+    }
+    .role-card:hover::before {
+        height: 8px;
+    }
+    .role-card.customer::before { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+    .role-card.provider::before { background: linear-gradient(90deg, #10b981, #34d399); }
+    .role-card.admin::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+
+    .role-card.customer:hover { border-color: #bfdbfe; }
+    .role-card.provider:hover { border-color: #a7f3d0; }
+    .role-card.admin:hover { border-color: #fde68a; }
+
+    .role-icon-wrap {
+        width: 80px;
+        height: 80px;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        margin-bottom: 1.5rem;
+        transition: transform 0.3s;
+    }
+    .role-card:hover .role-icon-wrap {
+        transform: scale(1.1) rotate(-5deg);
+    }
+    .role-card.customer .role-icon-wrap { background: #eff6ff; color: #3b82f6; }
+    .role-card.provider .role-icon-wrap { background: #ecfdf5; color: #10b981; }
+    .role-card.admin .role-icon-wrap { background: #fffbeb; color: #f59e0b; }
+
+    .role-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+        color: #1f2937;
+    }
+    .role-description {
+        margin-bottom: 1.75rem;
+        color: #6b7280;
+        line-height: 1.6;
+        font-size: 0.95rem;
+    }
+    .role-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+    }
+    .btn-role {
+        padding: 0.75rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s;
+        text-align: center;
+        text-decoration: none;
+        display: block;
+    }
+    .btn-role-primary {
+        color: white;
+        border: none;
+    }
+    .btn-role-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        color: white;
+    }
+    .role-card.customer .btn-role-primary { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+    .role-card.provider .btn-role-primary { background: linear-gradient(135deg, #10b981, #059669); }
+    .role-card.admin .btn-role-primary { background: linear-gradient(135deg, #f59e0b, #d97706); }
+
+    .btn-role-outline {
+        background: transparent;
+        border: 2px solid #e5e7eb;
+        color: #4b5563;
+    }
+    .btn-role-outline:hover {
+        border-color: #9ca3af;
+        color: #1f2937;
+        background: #f9fafb;
+    }
+
+    /* ===== HOW IT WORKS ===== */
+    .how-it-works {
+        padding: 5rem 0;
+        background: white;
+    }
+    .step-card {
+        text-align: center;
+        padding: 2rem 1rem;
+        position: relative;
+    }
+    .step-number {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: 800;
+        margin: 0 auto 1.25rem;
+        box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+    }
+    .step-title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 0.5rem;
+    }
+    .step-desc {
+        color: #6b7280;
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+    .step-connector {
+        display: none;
+    }
+    @media (min-width: 768px) {
+        .step-connector {
+            display: block;
+            position: absolute;
+            top: 45px;
+            right: -30px;
+            width: 60px;
+            height: 2px;
+            background: linear-gradient(90deg, #e5e7eb, #d1d5db);
+        }
+        .step-card:last-child .step-connector {
+            display: none;
+        }
+    }
+
+    /* ===== SERVICES ===== */
+    .services-section {
+        padding: 5rem 0;
+        background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+    }
+    .service-box {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        text-align: center;
+        border: 1px solid #e5e7eb;
+        transition: all 0.3s;
+        height: 100%;
+    }
+    .service-box:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+        border-color: #d1d5db;
+    }
+    .service-icon {
+        width: 70px;
+        height: 70px;
+        border-radius: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        margin: 0 auto 1.25rem;
+    }
+    .service-box h4 {
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 0.5rem;
+        font-size: 1.1rem;
+    }
+    .service-box p {
+        color: #6b7280;
+        font-size: 0.9rem;
+        margin-bottom: 0;
+    }
+
+    /* ===== FOOTER ===== */
+    .landing-footer {
+        background: #111827;
+        color: #9ca3af;
+        padding: 3rem 0 1.5rem;
+    }
+    .landing-footer h5 {
+        color: white;
+        font-weight: 700;
+        margin-bottom: 1.25rem;
+    }
+    .landing-footer a {
+        color: #9ca3af;
+        text-decoration: none;
+        transition: color 0.3s;
+    }
+    .landing-footer a:hover {
+        color: white;
+    }
+    .footer-bottom {
+        border-top: 1px solid #374151;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        text-align: center;
+        font-size: 0.9rem;
+    }
+
+    /* ===== ANIMATIONS ===== */
+    .fade-in-up {
+        opacity: 0;
+        transform: translateY(30px);
+        transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+    }
+    .fade-in-up.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    .delay-1 { transition-delay: 0.1s; }
+    .delay-2 { transition-delay: 0.2s; }
+    .delay-3 { transition-delay: 0.3s; }
+    .delay-4 { transition-delay: 0.4s; }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+        .hero-title { font-size: 2.5rem; }
+        .hero-subtitle { font-size: 1.1rem; }
+        .role-card { width: 100%; max-width: 380px; }
+        .stats-bar { margin-left: 0.5rem; margin-right: 0.5rem; }
+        .stat-number { font-size: 1.6rem; }
+        .section-header h2 { font-size: 1.75rem; }
+        .landing-navbar .nav-link { margin-left: 0; }
+        .hero-cta { flex-direction: column; align-items: center; }
+        .btn-hero-primary, .btn-hero-outline { width: 100%; max-width: 280px; }
+    }
+</style>
+
+<!-- Landing Navbar -->
+<nav class="landing-navbar">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center">
+            <a class="navbar-brand" href="{% url 'home' %}">
+                <i class="bi bi-truck"></i> Roadside Assist
+            </a>
+            <div class="d-none d-md-flex align-items-center">
+                <a href="#how-it-works" class="nav-link">How it Works</a>
+                <a href="#services" class="nav-link">Services</a>
+                <a href="{% url 'customer_login' %}" class="btn btn-nav">Get Started</a>
+            </div>
+            <button class="navbar-toggler d-md-none btn btn-outline-light border-0" type="button" data-bs-toggle="collapse" data-bs-target="#landingNav">
+                <i class="bi bi-list" style="font-size:1.5rem;"></i>
+            </button>
+        </div>
+        <div class="collapse d-md-none" id="landingNav">
+            <div class="pt-3 pb-2">
+                <a href="#how-it-works" class="nav-link d-block py-2">How it Works</a>
+                <a href="#services" class="nav-link d-block py-2">Services</a>
+                <a href="{% url 'customer_login' %}" class="nav-link d-block py-2">Get Started</a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Hero Section -->
+<div class="hero-section">
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+    <div class="shape shape-3"></div>
+    <div class="shape shape-4"></div>
+
+    <div class="hero-content">
+        <div class="hero-badge">
+            <span class="pulse-dot"></span>
+            <span>24/7 Emergency Assistance Available</span>
+        </div>
+        <div class="hero-title">
+            <i class="bi bi-truck"></i> Roadside Assist
+        </div>
+        <div class="hero-subtitle">
+            Get instant help when you need it most. Connect with nearby mechanics and fuel providers in minutes.
+        </div>
+        <div class="hero-cta">
+            <a href="{% url 'customer_register' %}" class="btn btn-hero-primary">
+                <i class="bi bi-lightning-charge-fill me-2"></i>Get Help Now
+            </a>
+            <a href="{% url 'provider_register' %}" class="btn btn-hero-outline">
+                <i class="bi bi-wrench-adjustable me-2"></i>Join as Provider
+            </a>
+        </div>
+
+        <div class="role-cards mt-4">
+            <!-- Customer Card -->
+            <div class="role-card customer fade-in-up">
+                <div class="role-icon-wrap">
+                    <i class="bi bi-person-raised-hand"></i>
+                </div>
+                <div class="role-title">Customer</div>
+                <div class="role-description">
+                    Stranded on the road? Get instant help from verified mechanics and fuel providers near you.
+                </div>
+                <div class="role-buttons">
+                    <a href="{% url 'customer_login' %}" class="btn-role btn-role-primary">Login</a>
+                    <a href="{% url 'customer_register' %}" class="btn-role btn-role-outline">Create Account</a>
+                </div>
+            </div>
+
+            <!-- Provider Card -->
+            <div class="role-card provider fade-in-up delay-1">
+                <div class="role-icon-wrap">
+                    <i class="bi bi-wrench-adjustable-circle"></i>
+                </div>
+                <div class="role-title">Service Provider</div>
+                <div class="role-description">
+                    Mechanic or fuel delivery partner? Earn money by helping stranded motorists in your area.
+                </div>
+                <div class="role-buttons">
+                    <a href="{% url 'provider_login' %}" class="btn-role btn-role-primary">Login</a>
+                    <a href="{% url 'provider_register' %}" class="btn-role btn-role-outline">Become a Partner</a>
+                </div>
+            </div>
+
+            <!-- Admin Card -->
+            <div class="role-card admin fade-in-up delay-2">
+                <div class="role-icon-wrap">
+                    <i class="bi bi-shield-lock"></i>
+                </div>
+                <div class="role-title">Admin</div>
+                <div class="role-description">
+                    Manage all service requests, verify providers, and monitor platform operations in real-time.
+                </div>
+                <div class="role-buttons">
+                    <a href="/admin/" class="btn-role btn-role-primary">Admin Panel</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <a href="#stats" class="scroll-indicator">
+        <span>Scroll Down</span>
+        <i class="bi bi-chevron-down"></i>
+    </a>
+</div>
+
+<!-- Stats Bar -->
+<div id="stats" class="container">
+    <div class="stats-bar">
+        <div class="row g-3">
+            <div class="col-6 col-md-3">
+                <div class="stat-item">
+                    <div class="stat-number">500+</div>
+                    <div class="stat-label">Service Providers</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-item">
+                    <div class="stat-number">10k+</div>
+                    <div class="stat-label">Requests Served</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-item">
+                    <div class="stat-number">15min</div>
+                    <div class="stat-label">Avg. Response Time</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-item">
+                    <div class="stat-number">4.8</div>
+                    <div class="stat-label">User Rating</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- How It Works -->
+<section id="how-it-works" class="how-it-works">
+    <div class="container">
+        <div class="section-header fade-in-up">
+            <h2>How It Works</h2>
+            <p>Get back on the road in three simple steps</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="step-card fade-in-up">
+                    <div class="step-connector"></div>
+                    <div class="step-number">1</div>
+                    <div class="step-title">Request Help</div>
+                    <div class="step-desc">Create a service request with your location and breakdown details. Takes less than 2 minutes.</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="step-card fade-in-up delay-1">
+                    <div class="step-connector"></div>
+                    <div class="step-number">2</div>
+                    <div class="step-title">Get Matched</div>
+                    <div class="step-desc">Our system connects you with the nearest available verified service provider instantly.</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="step-card fade-in-up delay-2">
+                    <div class="step-number">3</div>
+                    <div class="step-title">Back on Road</div>
+                    <div class="step-desc">Provider arrives, fixes your issue, and you pay securely through the app. Done!</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Services Section -->
+<section id="services" class="services-section">
+    <div class="container">
+        <div class="section-header fade-in-up">
+            <h2>Our Services</h2>
+            <p>Comprehensive roadside assistance for every situation</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="service-box fade-in-up">
+                    <div class="service-icon" style="background:#fff7ed; color:#f97316;">
+                        <i class="bi bi-fuel-pump-fill"></i>
+                    </div>
+                    <h4>Fuel Delivery</h4>
+                    <p>Out of fuel? We'll deliver it to your location.</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="service-box fade-in-up delay-1">
+                    <div class="service-icon" style="background:#fef2f2; color:#ef4444;">
+                        <i class="bi bi-tools"></i>
+                    </div>
+                    <h4>Mechanic Help</h4>
+                    <p>On-spot repairs by certified mechanics.</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="service-box fade-in-up delay-2">
+                    <div class="service-icon" style="background:#eff6ff; color:#3b82f6;">
+                        <i class="bi bi-circle"></i>
+                    </div>
+                    <h4>Tire Change</h4>
+                    <p>Flat tire? Quick and safe tire replacement.</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="service-box fade-in-up delay-3">
+                    <div class="service-icon" style="background:#f0fdf4; color:#22c55e;">
+                        <i class="bi bi-battery-charging"></i>
+                    </div>
+                    <h4>Battery Jump</h4>
+                    <p>Dead battery? Get a jump start right away.</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="service-box fade-in-up delay-4">
+                    <div class="service-icon" style="background:#faf5ff; color:#a855f7;">
+                        <i class="bi bi-truck-front-fill"></i>
+                    </div>
+                    <h4>Towing</h4>
+                    <p>Need a tow? We connect you with tow trucks.</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="service-box fade-in-up delay-4">
+                    <div class="service-icon" style="background:#f0f9ff; color:#0ea5e9;">
+                        <i class="bi bi-headset"></i>
+                    </div>
+                    <h4>24/7 Support</h4>
+                    <p>Round the clock customer assistance.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Landing Footer -->
+<footer class="landing-footer">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-md-4">
+                <h5><i class="bi bi-truck"></i> Roadside Assist</h5>
+                <p class="small">Your trusted partner for emergency roadside assistance. We connect stranded motorists with verified service providers in real-time.</p>
+            </div>
+            <div class="col-md-2">
+                <h5>Quick Links</h5>
+                <ul class="list-unstyled small">
+                    <li class="mb-2"><a href="{% url 'customer_login' %}">Customer Login</a></li>
+                    <li class="mb-2"><a href="{% url 'provider_login' %}">Provider Login</a></li>
+                    <li class="mb-2"><a href="{% url 'customer_register' %}">Sign Up</a></li>
+                </ul>
+            </div>
+            <div class="col-md-3">
+                <h5>Services</h5>
+                <ul class="list-unstyled small">
+                    <li class="mb-2">Fuel Delivery</li>
+                    <li class="mb-2">Mechanic Help</li>
+                    <li class="mb-2">Tire Change</li>
+                    <li class="mb-2">Battery Jump</li>
+                </ul>
+            </div>
+            <div class="col-md-3">
+                <h5>Contact</h5>
+                <ul class="list-unstyled small">
+                    <li class="mb-2"><i class="bi bi-envelope me-2"></i>support@roadsideassist.com</li>
+                    <li class="mb-2"><i class="bi bi-telephone me-2"></i>1-800-ROADSIDE</li>
+                    <li class="mb-2"><i class="bi bi-geo-alt me-2"></i>Available Nationwide</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p class="mb-0">&copy; 2025 Roadside Assist. All rights reserved.</p>
+        </div>
+    </div>
+</footer>
+
+<script>
+    // Scroll-triggered animations
+    document.addEventListener('DOMContentLoaded', function() {
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.fade-in-up').forEach(el => observer.observe(el));
+    });
+</script>
+{% endblock %}

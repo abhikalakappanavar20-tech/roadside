@@ -1,0 +1,339 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Payment - {{ service_request.request_id }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .payment-option {
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 2px solid #dee2e6;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    .payment-option:hover {
+        border-color: #0d6efd;
+        background-color: #f8f9fa;
+    }
+    .payment-option.selected {
+        border-color: #198754;
+        background-color: #f0fff4;
+    }
+    .payment-option input[type="radio"] {
+        display: none;
+    }
+    .payment-icon {
+        font-size: 2.5rem;
+        color: #0d6efd;
+    }
+    .payment-details {
+        display: none;
+        margin-top: 1rem;
+        padding: 1rem;
+        background: #fff;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+    }
+    .payment-details.active {
+        display: block;
+    }
+    .card-input {
+        font-family: monospace;
+        letter-spacing: 2px;
+    }
+    .fuel-quantity-selector {
+        background: #fff3cd;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        text-align: center;
+    }
+    .fuel-quantity-selector h5 {
+        color: #856404;
+        margin-bottom: 1rem;
+    }
+    .quantity-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        font-size: 1.2rem;
+        font-weight: bold;
+    }
+    .fuel-display {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #856404;
+        min-width: 80px;
+    }
+    .fuel-price-info {
+        font-size: 1.5rem;
+        color: #198754;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'request_detail' service_request.request_id %}">Request {{ service_request.request_id }}</a></li>
+                    <li class="breadcrumb-item active">Payment</li>
+                </ol>
+            </nav>
+
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0"><i class="bi bi-credit-card"></i> Payment</h4>
+                </div>
+                <div class="card-body">
+                    {% if service_request.service_type == 'fuel' %}
+                    <div class="fuel-quantity-selector">
+                        <h5><i class="bi bi-fuel-pump"></i> Select Fuel Quantity</h5>
+                        <p class="mb-2 text-muted">&#8377;{{ fuel_price_per_liter }} per liter (Max {{ max_fuel_liters }} liters)</p>
+                        <div class="d-flex align-items-center justify-content-center gap-3">
+                            <button type="button" class="btn btn-outline-secondary quantity-btn" onclick="updateFuelQuantity(-1)">-</button>
+                            <span class="fuel-display" id="fuelQuantity">{{ service_request.fuel_quantity }}</span>
+                            <button type="button" class="btn btn-outline-secondary quantity-btn" onclick="updateFuelQuantity(1)">+</button>
+                        </div>
+                    </div>
+                    <div class="fuel-quantity-selector" style="background: #d1ecf1;">
+                        <h5><i class="bi bi-geo-alt"></i> Select Distance</h5>
+                        <p class="mb-2 text-muted">&#8377;{{ distance_charge_per_km }} per km (Max {{ max_distance_km }} km)</p>
+                        <div class="d-flex align-items-center justify-content-center gap-3">
+                            <button type="button" class="btn btn-outline-secondary quantity-btn" onclick="updateDistance(-1)">-</button>
+                            <span class="fuel-display" id="distanceKm">{{ service_request.distance_km }}</span>
+                            <button type="button" class="btn btn-outline-secondary quantity-btn" onclick="updateDistance(1)">+</button>
+                        </div>
+                    </div>
+                    <div class="cost-breakdown mt-3 p-3 bg-light rounded">
+                        <h6 class="mb-2">Cost Breakdown:</h6>
+                        <div class="d-flex justify-content-between">
+                            <span>Fuel (<span id="displayFuelQty">{{ service_request.fuel_quantity }}</span> L × &#8377;{{ fuel_price_per_liter }}):</span>
+                            <span>&#8377;<span id="fuelCost">0</span></span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Distance (<span id="displayDistance">{{ service_request.distance_km }}</span> km × &#8377;{{ distance_charge_per_km }}):</span>
+                            <span>&#8377;<span id="distanceCost">0</span></span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Service Charge:</span>
+                            <span>&#8377;{{ service_charge }}</span>
+                        </div>
+                        <hr class="my-2">
+                        <div class="d-flex justify-content-between fw-bold">
+                            <span>Total:</span>
+                            <span>&#8377;<span id="fuelTotal">{{ service_request.final_cost }}</span></span>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center mb-4">
+                        <h5 class="text-muted">Amount to Pay</h5>
+                        <h2 class="text-success">&#8377;{{ service_request.final_cost }}</h2>
+                        <p class="small text-muted mb-0">Service: {{ service_request.get_service_type_display }}</p>
+                    </div>
+                    {% endif %}
+
+                    <hr>
+
+                    <h5 class="mb-3">Select Payment Method</h5>
+
+                    <form method="POST" action="{% url 'mark_paid' service_request.request_id %}" id="paymentForm">
+                        {% csrf_token %}
+
+                        <input type="hidden" name="payment_method" id="selectedMethod" value="">
+                        {% if service_request.service_type == 'fuel' %}
+                        <input type="hidden" name="fuel_quantity" id="formFuelQuantity" value="{{ service_request.fuel_quantity }}">
+                        <input type="hidden" name="distance_km" id="formDistanceKm" value="{{ service_request.distance_km }}">
+                        {% endif %}
+
+                        <div class="payment-option" data-method="card">
+                            <div class="d-flex align-items-center">
+                                <input type="radio" name="payment_method_select" id="card" value="card">
+                                <label for="card" class="d-flex align-items-center w-100 ms-3 mb-0">
+                                    <i class="bi bi-credit-card-2-front payment-icon"></i>
+                                    <div class="ms-3">
+                                        <strong>Credit / Debit Card</strong>
+                                        <p class="mb-0 small text-muted">Pay securely with your card</p>
+                                    </div>
+                                </label>
+                            </div>
+                            <div class="payment-details" id="cardDetails">
+                                <div class="mb-3">
+                                    <label class="form-label">Card Number</label>
+                                    <input type="text" class="form-control card-input" placeholder="1234 5678 9012 3456" maxlength="19">
+                                </div>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <label class="form-label">Expiry</label>
+                                        <input type="text" class="form-control" placeholder="MM/YY" maxlength="5">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label">CVV</label>
+                                        <input type="password" class="form-control" placeholder="123" maxlength="4">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="payment-option" data-method="upi">
+                            <div class="d-flex align-items-center">
+                                <input type="radio" name="payment_method_select" id="upi" value="upi">
+                                <label for="upi" class="d-flex align-items-center w-100 ms-3 mb-0">
+                                    <i class="bi bi-phone payment-icon"></i>
+                                    <div class="ms-3">
+                                        <strong>UPI</strong>
+                                        <p class="mb-0 small text-muted">Pay using Google Pay, PhonePe, Paytm</p>
+                                    </div>
+                                </label>
+                            </div>
+                            <div class="payment-details" id="upiDetails">
+                                <div class="mb-0">
+                                    <label class="form-label">UPI ID</label>
+                                    <input type="text" class="form-control" placeholder="yourname@upi">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="payment-option" data-method="cash">
+                            <div class="d-flex align-items-center">
+                                <input type="radio" name="payment_method_select" id="cash" value="cash">
+                                <label for="cash" class="d-flex align-items-center w-100 ms-3 mb-0">
+                                    <i class="bi bi-cash-stack payment-icon"></i>
+                                    <div class="ms-3">
+                                        <strong>Cash on Service</strong>
+                                        <p class="mb-0 small text-muted">Pay with cash to the provider</p>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-success btn-lg" id="payBtn" disabled>
+                                <i class="bi bi-lock"></i> Pay &#8377;<span id="payAmount">{{ service_request.final_cost }}</span>
+                            </button>
+                        </div>
+
+                        <p class="text-center small text-muted mt-3 mb-0">
+                            <i class="bi bi-shield-check"></i> Secure payment processing
+                        </p>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Global variables for fuel services
+let FUEL_PRICE_PER_LITER = 0;
+let DISTANCE_CHARGE_PER_KM = 0;
+let SERVICE_CHARGE = 0;
+let MAX_FUEL_LITERS = 0;
+let MAX_DISTANCE_KM = 0;
+
+// Initialize variables only if fuel elements exist
+document.addEventListener('DOMContentLoaded', function() {
+    const fuelElem = document.getElementById('fuelQuantity');
+    const isFuelService = fuelElem !== null;
+
+    if (isFuelService) {
+        FUEL_PRICE_PER_LITER = parseFloat('{{ fuel_price_per_liter }}');
+        DISTANCE_CHARGE_PER_KM = parseFloat('{{ distance_charge_per_km }}');
+        SERVICE_CHARGE = parseFloat('{{ service_charge }}');
+        MAX_FUEL_LITERS = parseFloat('{{ max_fuel_liters }}');
+        MAX_DISTANCE_KM = parseFloat('{{ max_distance_km }}');
+        updateTotal();
+    }
+
+    // Payment method selection - works for ALL service types
+    const paymentOptions = document.querySelectorAll('.payment-option');
+    const selectedMethod = document.getElementById('selectedMethod');
+    const payBtn = document.getElementById('payBtn');
+
+    paymentOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            const method = this.dataset.method;
+
+            paymentOptions.forEach(opt => opt.classList.remove('selected'));
+            this.classList.add('selected');
+
+            document.querySelectorAll('.payment-details').forEach(detail => {
+                detail.classList.remove('active');
+            });
+
+            const details = document.getElementById(method + 'Details');
+            if (details) {
+                details.classList.add('active');
+            }
+
+            selectedMethod.value = method;
+            payBtn.disabled = false;
+        });
+    });
+
+    // Card input formatting
+    const cardInput = document.querySelector('#cardDetails input');
+    if (cardInput) {
+        cardInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            value = value.replace(/(.{4})/g, '$1 ').trim();
+            e.target.value = value.substring(0, 19);
+        });
+    }
+});
+
+function updateFuelQuantity(change) {
+    const elem = document.getElementById('fuelQuantity');
+    if (!elem) return;
+    let currentQty = parseInt(elem.textContent);
+    let newQty = currentQty + change;
+
+    if (newQty < 1) newQty = 1;
+    if (newQty > MAX_FUEL_LITERS) newQty = MAX_FUEL_LITERS;
+
+    elem.textContent = newQty;
+    const formInput = document.getElementById('formFuelQuantity');
+    if (formInput) formInput.value = newQty;
+    let displayElem = document.getElementById('displayFuelQty');
+    if (displayElem) displayElem.textContent = newQty;
+    updateTotal();
+}
+
+function updateDistance(change) {
+    const elem = document.getElementById('distanceKm');
+    if (!elem) return;
+    let currentDist = parseFloat(elem.textContent);
+    let newDist = currentDist + change;
+
+    if (newDist < 1) newDist = 1;
+    if (newDist > MAX_DISTANCE_KM) newDist = MAX_DISTANCE_KM;
+
+    elem.textContent = newDist;
+    const formInput = document.getElementById('formDistanceKm');
+    if (formInput) formInput.value = newDist;
+    let displayElem = document.getElementById('displayDistance');
+    if (displayElem) displayElem.textContent = newDist;
+    updateTotal();
+}
+
+function updateTotal() {
+    const fuelElem = document.getElementById('fuelQuantity');
+    if (!fuelElem) return;
+
+    let fuelQty = parseInt(fuelElem.textContent);
+    let distance = parseFloat(document.getElementById('distanceKm').textContent);
+    let fuelCost = fuelQty * FUEL_PRICE_PER_LITER;
+    let distanceCost = distance * DISTANCE_CHARGE_PER_KM;
+    let total = fuelCost + distanceCost + SERVICE_CHARGE;
+    document.getElementById('fuelCost').textContent = fuelCost;
+    document.getElementById('distanceCost').textContent = distanceCost;
+    document.getElementById('fuelTotal').textContent = total;
+    document.getElementById('payAmount').textContent = total;
+}
+</script>
+{% endblock %}
