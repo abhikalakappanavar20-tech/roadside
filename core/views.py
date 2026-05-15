@@ -8,8 +8,7 @@ from django.db.models import Q, Count
 from django.utils import timezone
 from datetime import timedelta
 from io import BytesIO
-from django.template.loader import render_to_string
-from xhtml2pdf import pisa
+from fpdf import FPDF
 
 from api.models import UserProfile, ServiceRequest, ServiceHistory
 from api.forms import CustomerRegistrationForm, ProviderRegistrationForm
@@ -579,21 +578,108 @@ def download_bill_pdf(request, request_id):
     DISTANCE_CHARGE_PER_KM = 2
     SERVICE_CHARGE = 50
 
-    html = render_to_string("core/bill_pdf.html", {
-        "service_request": service_request,
-        "history": history,
-        "fuel_price_per_liter": FUEL_PRICE_PER_LITER,
-        "distance_charge_per_km": DISTANCE_CHARGE_PER_KM,
-        "service_charge": SERVICE_CHARGE,
-    })
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
 
-    result = BytesIO()
-    pisa_status = pisa.CreatePDF(html, dest=result)
-    if pisa_status.err:
-        return HttpResponse("PDF generation error", status=500)
+    # Header
+    pdf.set_fill_color(102, 126, 234)
+    pdf.rect(0, 0, 210, 40, "F")
+    pdf.set_text_color(255, 255, 255)
+    pdf.set_font("Helvetica", "B", 20)
+    pdf.set_y(10)
+    pdf.cell(0, 10, "Payment Receipt", align="C")
+    pdf.set_font("Helvetica", "", 10)
+    pdf.cell(0, 8, service_request.request_id, align="C")
 
-    result.seek(0)
-    response = HttpResponse(result.getvalue(), content_type="application/pdf")
+    # Body
+    pdf.set_y(50)
+    pdf.set_text_color(51, 51, 51)
+
+    # Service info
+    pdf.set_font("Helvetica", "B", 14)
+    pdf.cell(0, 10, service_request.get_service_type_display())
+    pdf.ln(6)
+    pdf.set_font("Helvetica", "", 9)
+    pdf.set_text_color(102, 102, 102)
+    pdf.cell(0, 6, f"Date: {service_request.completed_at.strftime('%d %b %Y, %I:%M %p') if service_request.completed_at else 'N/A'}")
+
+    pdf.ln(12)
+    pdf.set_draw_color(200, 200, 200)
+    pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+    pdf.ln(4)
+
+    pdf.set_font("Helvetica", "B", 10)
+    pdf.set_text_color(102, 102, 102)
+    pdf.cell(0, 8, "SERVICE DETAILS")
+    pdf.ln(8)
+
+    pdf.set_text_color(51, 51, 51)
+    pdf.set_font("Helvetica", "", 10)
+
+    def row(label, value):
+        pdf.cell(90, 8, label, border="B")
+        pdf.cell(0, 8, str(value), border="B", align="R")
+        pdf.ln(8)
+
+    line_y = pdf.get_y()
+
+    if service_request.service_type == "fuel":
+        fuel_cost = (service_request.fuel_quantity or 0) * FUEL_PRICE_PER_LITER
+        dist_cost = (service_request.distance_km or 0) * DISTANCE_CHARGE_PER_KM
+        row(f"Fuel ({service_request.fuel_quantity or 0} L x Rs{FUEL_PRICE_PER_LITER})", f"Rs{fuel_cost}")
+        row(f"Distance ({service_request.distance_km or 0} km x Rs{DISTANCE_CHARGE_PER_KM})", f"Rs{dist_cost}")
+        row("Service Charge", f"Rs{SERVICE_CHARGE}")
+    else:
+        row("Service Type", service_request.get_service_type_display())
+
+    if service_request.issue_description:
+        row("Description", service_request.issue_description[:60])
+
+    pdf.ln(4)
+    pdf.set_fill_color(248, 249, 250)
+    pdf.rect(10, pdf.get_y(), 190, 12, "F")
+    pdf.set_font("Helvetica", "B", 12)
+    pdf.set_text_color(40, 167, 69)
+    pdf.set_y(pdf.get_y() + 2)
+    pdf.cell(90, 8, "Total Paid")
+    pdf.cell(0, 8, f"Rs{service_request.final_cost}", align="R")
+    pdf.set_text_color(51, 51, 51)
+
+    if history:
+        pdf.ln(16)
+        pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+        pdf.ln(4)
+        pdf.set_font("Helvetica", "B", 10)
+        pdf.set_text_color(102, 102, 102)
+        pdf.cell(0, 8, "PAYMENT INFORMATION")
+        pdf.ln(8)
+        pdf.set_font("Helvetica", "", 10)
+        pdf.set_text_color(51, 51, 51)
+        row("Payment Method", history.get_payment_method_display())
+        row("Payment Date", history.paid_at.strftime("%d %b %Y, %I:%M %p") if history.paid_at else "N/A")
+        row("Status", "Paid")
+
+    pdf.ln(16)
+    pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+    pdf.ln(4)
+    pdf.set_font("Helvetica", "B", 10)
+    pdf.set_text_color(102, 102, 102)
+    pdf.cell(0, 8, "PROVIDER DETAILS")
+    pdf.ln(8)
+    pdf.set_font("Helvetica", "", 10)
+    pdf.set_text_color(51, 51, 51)
+    name = service_request.assigned_provider.get_full_name() or service_request.assigned_provider.username if service_request.assigned_provider else "N/A"
+    phone = service_request.assigned_provider.profile.phone_number if service_request.assigned_provider and service_request.assigned_provider.profile.phone_number else "N/A"
+    row("Name", name)
+    row("Contact", phone)
+
+    pdf.ln(8)
+    pdf.set_font("Helvetica", "", 8)
+    pdf.set_text_color(153, 153, 153)
+    pdf.cell(0, 6, "Roadside Assist - Thank you for your business!", align="C")
+
+    response = HttpResponse(pdf.output(), content_type="application/pdf")
     response["Content-Disposition"] = f'attachment; filename="bill_{service_request.request_id}.pdf"'
     return response
 

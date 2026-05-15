@@ -4,5 +4,5 @@ whitenoise[brotli]>=6.0.0
 psycopg2-binary>=2.9.0
 dj-database-url>=2.0.0
 requests>=2.31.0
-xhtml2pdf>=0.2.17
+fpdf2>=2.8.7
 
