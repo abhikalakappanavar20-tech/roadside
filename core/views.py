@@ -894,7 +894,7 @@ def profile(request):
 
 def download_app(request):
     """Redirect to latest APK download"""
-    return redirect("https://jfv6ttcmrks02cym.public.blob.vercel-storage.com/RoadsideAssist-xPQPhPuhn6CmssEylrqFuWb8fv7xJ3.apk")
+    return redirect("https://jfv6ttcmrks02cym.public.blob.vercel-storage.com/RoadsideAssist-5KuxyDoRXMK5mHCX5bNzgn3NQpBJen.apk")
 
 
 def clear_cache(request):
