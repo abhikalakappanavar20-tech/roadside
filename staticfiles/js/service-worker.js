@@ -1,4 +1,4 @@
-const CACHE_NAME = 'roadside-assist-v1';
+const CACHE_NAME = 'roadside-assist-v2';
 const urlsToCache = [
     '/',
     '/static/css/style.css',
@@ -35,33 +35,35 @@ self.addEventListener('activate', event => {
     self.clients.claim();
 });
 
-// Fetch event - serve from cache, fallback to network
+// Fetch event - network first for HTML/doc requests, cache first for assets
 self.addEventListener('fetch', event => {
+    const url = new URL(event.request.url);
+
+    // For HTML/document requests, always go to network first
+    if (event.request.mode === 'navigate' || url.pathname.startsWith('/admin/')) {
+        event.respondWith(
+            fetch(event.request).catch(() => caches.match(event.request))
+        );
+        return;
+    }
+
     event.respondWith(
         caches.match(event.request)
             .then(response => {
-                // Cache hit - return response
                 if (response) {
                     return response;
                 }
 
-                // Clone the request
                 const fetchRequest = event.request.clone();
-
                 return fetch(fetchRequest).then(response => {
-                    // Check if valid response
                     if (!response || response.status !== 200 || response.type !== 'basic') {
                         return response;
                     }
-
-                    // Clone the response
                     const responseToCache = response.clone();
-
                     caches.open(CACHE_NAME)
                         .then(cache => {
                             cache.put(event.request, responseToCache);
                         });
-
                     return response;
                 });
             })

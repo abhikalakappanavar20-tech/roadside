@@ -897,6 +897,13 @@ def download_app(request):
     return redirect("https://jfv6ttcmrks02cym.public.blob.vercel-storage.com/RoadsideAssist-xPQPhPuhn6CmssEylrqFuWb8fv7xJ3.apk")
 
 
+def clear_cache(request):
+    """Clear browser/app cache and redirect to home"""
+    response = redirect("home")
+    response["Clear-Site-Data"] = '"cache", "cookies", "storage"'
+    return response
+
+
 @login_required
 def provider_toggle_availability(request):
     """Provider toggles their availability"""
