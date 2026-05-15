@@ -3,10 +3,13 @@ from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.db.models import Q, Count
 from django.utils import timezone
 from datetime import timedelta
+from io import BytesIO
+from django.template.loader import render_to_string
+from xhtml2pdf import pisa
 
 from api.models import UserProfile, ServiceRequest, ServiceHistory
 from api.forms import CustomerRegistrationForm, ProviderRegistrationForm
@@ -546,6 +549,53 @@ def view_bill(request, request_id):
         "service_charge": SERVICE_CHARGE,
     }
     return render(request, "core/bill.html", context)
+
+
+@login_required
+def download_bill_pdf(request, request_id):
+    """Download bill as PDF"""
+    service_request = get_object_or_404(ServiceRequest, request_id=request_id)
+
+    if request.user.profile.role == "customer" and service_request.user != request.user:
+        messages.error(request, "Access denied.")
+        return redirect("dashboard")
+    elif (
+        request.user.profile.role == "provider"
+        and service_request.assigned_provider != request.user
+    ):
+        messages.error(request, "Access denied.")
+        return redirect("dashboard")
+
+    if service_request.status not in ["paid", "completed"]:
+        messages.warning(request, "Bill is only available after payment.")
+        return redirect("request_detail", request_id=request_id)
+
+    try:
+        history = ServiceHistory.objects.get(service_request=service_request)
+    except ServiceHistory.DoesNotExist:
+        history = None
+
+    FUEL_PRICE_PER_LITER = 100
+    DISTANCE_CHARGE_PER_KM = 2
+    SERVICE_CHARGE = 50
+
+    html = render_to_string("core/bill_pdf.html", {
+        "service_request": service_request,
+        "history": history,
+        "fuel_price_per_liter": FUEL_PRICE_PER_LITER,
+        "distance_charge_per_km": DISTANCE_CHARGE_PER_KM,
+        "service_charge": SERVICE_CHARGE,
+    })
+
+    result = BytesIO()
+    pisa_status = pisa.CreatePDF(html, dest=result)
+    if pisa_status.err:
+        return HttpResponse("PDF generation error", status=500)
+
+    result.seek(0)
+    response = HttpResponse(result.getvalue(), content_type="application/pdf")
+    response["Content-Disposition"] = f'attachment; filename="bill_{service_request.request_id}.pdf"'
+    return response
 
 
 @login_required

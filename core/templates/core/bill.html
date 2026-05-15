@@ -13,7 +13,6 @@
 .status-badge{font-size:0.9rem;padding:0.4rem 1rem;}
 @media print{body{visibility:hidden;}.bill-container{visibility:visible;position:absolute;left:0;top:0;width:100%;}.btn,.navbar{display:none!important;}}
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 {% endblock %}
 
 {% block content %}
@@ -109,33 +108,13 @@
                 <button onclick="window.print()" class="btn btn-success me-2">
                     <i class="bi bi-printer"></i> Print Bill
                 </button>
-                <button onclick="downloadBill()" class="btn btn-primary">
+                <a href="{% url 'download_bill' service_request.request_id %}" class="btn btn-primary">
                     <i class="bi bi-download"></i> Download Bill
-                </button>
+                </a>
             </div>
         </div>
     </div>
 </div>
 {% endblock %}
 
-{% block extra_js %}
-<script>
-function downloadBill() {
-    const element = document.querySelector('.bill-container');
-    const btn = document.querySelector('.btn-primary');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Downloading...';
-    const opt = {
-        margin:       0.5,
-        filename:     'bill_{{ service_request.request_id }}.pdf',
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCors: true },
-        jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
-    };
-    html2pdf().set(opt).from(element).save().then(() => {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-download"></i> Download Bill';
-    });
-}
-</script>
 {% endblock %}

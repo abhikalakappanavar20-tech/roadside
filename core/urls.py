@@ -36,6 +36,7 @@ urlpatterns = [
     path("customer/pay/<str:request_id>/", views.payment_page, name="payment_page"),
     path("customer/pay/process/<str:request_id>/", views.mark_paid, name="mark_paid"),
     path("customer/bill/<str:request_id>/", views.view_bill, name="view_bill"),
+    path("customer/bill/<str:request_id>/download/", views.download_bill_pdf, name="download_bill"),
     path("customer/rate/<str:request_id>/", views.rate_service, name="rate_service"),
     path(
         "customer/upload-photo/<str:request_id>/",
