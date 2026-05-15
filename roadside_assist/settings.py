@@ -33,19 +33,22 @@ ALLOWED_HOSTS = [
     '*'
 ]
 
-# CSRF trusted origins for tunnels
+# CSRF trusted origins for tunnels and production
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:8000',
     'http://127.0.0.1:8000',
     'https://*.trycloudflare.com',
     'https://*.ngrok-free.app',
     'https://*.ngrok.io',
+    'https://roadside-assist-ashy.vercel.app',
+    'https://*.vercel.app',
 ]
 
-# Security settings for PWA
-SECURE_SSL_REDIRECT = False  # Set to True in production
-SESSION_COOKIE_SECURE = False  # Set to True in production
-CSRF_COOKIE_SECURE = False  # Set to True in production
+# Security settings - secure cookies on HTTPS (Vercel), allow HTTP locally
+IS_VERCEL = os.environ.get("VERCEL") == "1"
+SECURE_SSL_REDIRECT = False
+SESSION_COOKIE_SECURE = IS_VERCEL
+CSRF_COOKIE_SECURE = IS_VERCEL
 
 
 # Application definition
